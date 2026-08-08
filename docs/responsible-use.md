@@ -12,7 +12,9 @@ pointing it at anything.
    responsibility. The tool's safeguards reduce blast radius; they are not consent.
 3. **Auditor mode is the default and the floor.** Without confirmed write access,
    Ouroboros only produces a report — it will not, and structurally cannot,
-   mutate the target.
+   mutate the target. Owner-mode remediation (`--fix`/`--open-pr`) works on a
+   throwaway clone and never touches your local working copy; a PR is only ever
+   opened when you explicitly pass `--open-pr` with a token.
 4. **Dynamic analysis in auditor mode runs against an offline `SimulatedTarget`**,
    never the real third-party agent and never a live API. Its verdicts follow the
    target's recovered defenses, and every finding is labelled `simulated` (reduced

@@ -25,7 +25,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ouroboros.github_access import resolve_mode
+from ouroboros.github_access import ModeDecision, resolve_mode
 from ouroboros.schemas.common import Mode
 from ouroboros.schemas.repo_profile import EntryPoint, ExtractedPrompt, RepoProfile
 
@@ -64,9 +64,62 @@ class _Scan:
     frameworks: set[str] = field(default_factory=set)
 
 
+@dataclass
+class Checkout:
+    """A materialized copy of a target the rest of the pipeline can read and edit.
+
+    Recon used to clone, analyze, and delete in one call, which left nothing on
+    disk for the static/patch passes to work on for a remote repo. Splitting the
+    checkout out lets the orchestrator hold it open across the whole run (recon ->
+    static -> patch -> owner-mode apply/commit/push) and clean it up once at the end.
+    """
+
+    root: Path
+    is_remote: bool
+    commit_sha: str | None
+    cleanup: Cleanup
+
+
 # --------------------------------------------------------------------------
 # public entry point
 # --------------------------------------------------------------------------
+def acquire(
+    source: str,
+    *,
+    requested_mode: Mode | None = None,
+    token: str | None = None,
+    github_client: object | None = None,
+) -> tuple[Checkout, ModeDecision]:
+    """Resolve the mode and materialize ``source`` without cleaning it up.
+
+    The caller owns the returned ``Checkout`` and must call ``cleanup()`` when
+    done. Use :func:`profile` instead when you only need the profile and want the
+    temp clone removed for you.
+    """
+    decision = resolve_mode(source, requested=requested_mode, token=token, client=github_client)
+    root, is_remote, commit_sha, cleanup = _materialize(source)
+    return Checkout(root, is_remote, commit_sha, cleanup), decision
+
+
+def profile_checkout(checkout: Checkout, decision: ModeDecision, source: str) -> RepoProfile:
+    """Analyze an already-materialized checkout into a ``RepoProfile``."""
+    scan = _walk(checkout.root)
+    prompts = scan.prompts + _prompts_from_prompt_files(checkout.root)
+    language = "python" if _has_python(checkout.root) else _guess_language(checkout.root)
+    framework = _pick_framework(scan.frameworks)
+    return RepoProfile(
+        source=source,
+        resolved_mode=decision.mode,
+        is_remote=checkout.is_remote,
+        commit_sha=checkout.commit_sha,
+        language=language,
+        framework=framework,
+        entry_points=_dedupe_entry_points(scan.entry_points + _scripts(checkout.root)),
+        system_prompts=_dedupe_prompts(prompts),
+        notes=[f"mode: {decision.reason}"],
+    )
+
+
 def profile(
     source: str,
     *,
@@ -74,28 +127,18 @@ def profile(
     token: str | None = None,
     github_client: object | None = None,
 ) -> RepoProfile:
-    """Build a ``RepoProfile`` for ``source`` (a local path or a GitHub URL)."""
-    decision = resolve_mode(source, requested=requested_mode, token=token, client=github_client)
+    """Build a ``RepoProfile`` for ``source``, cleaning up any temp clone.
 
-    root, is_remote, commit_sha, cleanup = _materialize(source)
+    A thin wrapper over :func:`acquire` + :func:`profile_checkout` for callers that
+    do not need to keep the checkout around.
+    """
+    checkout, decision = acquire(
+        source, requested_mode=requested_mode, token=token, github_client=github_client
+    )
     try:
-        scan = _walk(root)
-        prompts = scan.prompts + _prompts_from_prompt_files(root)
-        language = "python" if _has_python(root) else _guess_language(root)
-        framework = _pick_framework(scan.frameworks)
-        return RepoProfile(
-            source=source,
-            resolved_mode=decision.mode,
-            is_remote=is_remote,
-            commit_sha=commit_sha,
-            language=language,
-            framework=framework,
-            entry_points=_dedupe_entry_points(scan.entry_points + _scripts(root)),
-            system_prompts=_dedupe_prompts(prompts),
-            notes=[f"mode: {decision.reason}"],
-        )
+        return profile_checkout(checkout, decision, source)
     finally:
-        cleanup()
+        checkout.cleanup()
 
 
 # --------------------------------------------------------------------------

@@ -50,3 +50,19 @@ def test_attack_on_local_target_simulates_offline(vuln_agent: Path, tmp_path: Pa
     )
     assert result.exit_code == 0, result.output
     assert "simulated" in result.output
+
+
+def test_fix_on_local_target_still_reports(vuln_agent: Path, tmp_path: Path) -> None:
+    result = runner.invoke(
+        scan_app, ["scan", "--repo", str(vuln_agent), "--out", str(tmp_path), "--fix"]
+    )
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "vulnerable_agent.md").exists()
+
+
+def test_open_pr_without_token_errors(vuln_agent: Path, tmp_path: Path) -> None:
+    result = runner.invoke(
+        scan_app, ["scan", "--repo", str(vuln_agent), "--out", str(tmp_path), "--open-pr"]
+    )
+    assert result.exit_code == 2
+    assert "GITHUB_TOKEN" in result.output

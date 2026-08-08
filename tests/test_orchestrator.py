@@ -7,7 +7,12 @@ from pathlib import Path
 import pytest
 from tests.conftest import FakeClient, FakeGithub
 
-from ouroboros.orchestrator import ScanError, _resolve_attack_client, run
+from ouroboros.orchestrator import (
+    ScanError,
+    _dispatch_output,
+    _resolve_attack_client,
+    run,
+)
 
 
 def test_scan_fixture_is_auditor_with_static_findings(vuln_agent: Path, tmp_path: Path) -> None:
@@ -88,3 +93,121 @@ def test_hardened_target_resists_more_than_vulnerable(tmp_path: Path) -> None:
     dr = result.report.dynamic_run
     assert dr is not None
     assert 0 < dr.successes < dr.attempts  # a gradient, not all-or-nothing
+
+
+def test_auditor_fix_still_only_reports(vuln_agent: Path, tmp_path: Path) -> None:
+    # fix=True on a local (auditor) target must not write: patches are generated for
+    # the report, but applied_action stays "report" (the schema fail-safe).
+    result = run(str(vuln_agent), fix=True, out_dir=tmp_path)
+    assert result.report.applied_action == "report"
+    assert len(result.report.proposed_patches) > 0
+
+
+def test_dispatch_auditor_returns_report() -> None:
+    from ouroboros.agents.recon import Checkout
+
+    checkout = Checkout(root=Path("."), is_remote=False, commit_sha=None, cleanup=lambda: None)
+    assert _dispatch_output(
+        mode="auditor",
+        fix=True,
+        open_pr=True,
+        checkout=checkout,
+        patches=[],
+        slug="o/n",
+        token="t",
+        github_client=None,
+    ) == ("report", None)
+
+
+def test_dispatch_owner_no_fix_returns_report() -> None:
+    from ouroboros.agents.recon import Checkout
+
+    checkout = Checkout(root=Path("."), is_remote=True, commit_sha=None, cleanup=lambda: None)
+    assert _dispatch_output(
+        mode="owner",
+        fix=False,
+        open_pr=False,
+        checkout=checkout,
+        patches=[],
+        slug="o/n",
+        token="t",
+        github_client=None,
+    ) == ("report", None)
+
+
+def test_dispatch_owner_open_pr_opens_pull_request(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    from ouroboros import remediation
+    from ouroboros.agents.patch_generator import generate
+    from ouroboros.agents.recon import Checkout
+    from ouroboros.agents.static_analyzer import analyze
+    from ouroboros.schemas.repo_profile import RepoProfile
+
+    repo = tmp_path / "repo"
+    subprocess.run(["cp", "-r", "tests/fixtures/vulnerable_agent", str(repo)], check=True)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"], cwd=repo, check=True
+    )
+    subprocess.run(
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "i"],
+        cwd=repo,
+        check=True,
+    )
+    monkeypatch.setattr(remediation, "_live_push", lambda *a, **k: None)  # no network
+
+    profile = RepoProfile(source=str(repo), resolved_mode="owner")
+    patches = generate(analyze(profile, root=repo), [], root=repo)
+    checkout = Checkout(root=repo, is_remote=True, commit_sha=None, cleanup=lambda: None)
+
+    action, ref = _dispatch_output(
+        mode="owner",
+        fix=True,
+        open_pr=True,
+        checkout=checkout,
+        patches=patches,
+        slug="o/n",
+        token="tok",
+        github_client=FakeGithub(push=True),
+    )
+    assert action == "pull_request"
+    assert ref and ref.startswith("https://github.com/")
+
+
+def test_dispatch_owner_open_pr_without_slug_raises() -> None:
+    import subprocess
+    import tempfile
+
+    from ouroboros.agents.patch_generator import generate
+    from ouroboros.agents.recon import Checkout
+    from ouroboros.agents.static_analyzer import analyze
+    from ouroboros.schemas.repo_profile import RepoProfile
+
+    repo = Path(tempfile.mkdtemp()) / "repo"
+    subprocess.run(["cp", "-r", "tests/fixtures/vulnerable_agent", str(repo)], check=True)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"], cwd=repo, check=True
+    )
+    subprocess.run(
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "i"],
+        cwd=repo,
+        check=True,
+    )
+    profile = RepoProfile(source=str(repo), resolved_mode="owner")
+    patches = generate(analyze(profile, root=repo), [], root=repo)
+    checkout = Checkout(root=repo, is_remote=True, commit_sha=None, cleanup=lambda: None)
+    with pytest.raises(ScanError):
+        _dispatch_output(
+            mode="owner",
+            fix=True,
+            open_pr=True,
+            checkout=checkout,
+            patches=patches,
+            slug=None,
+            token=None,
+            github_client=None,
+        )

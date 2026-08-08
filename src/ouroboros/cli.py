@@ -60,6 +60,13 @@ def _build_llm_client() -> object:
     return anthropic.Anthropic()
 
 
+def _build_github_client(token: str | None) -> object:
+    """Build a PyGithub client for opening a PR. Only called when --open-pr is set."""
+    from github import Github
+
+    return Github(token)
+
+
 @app.callback()
 def main() -> None:
     """Load local configuration before any command runs."""
@@ -99,23 +106,45 @@ def scan(
         float,
         typer.Option("--min-interval", help="Minimum seconds between attack requests."),
     ] = 1.0,
+    fix: Annotated[
+        bool,
+        typer.Option(
+            "--fix/--no-fix",
+            help="Owner mode: apply the guardrail patches and commit them on a branch.",
+        ),
+    ] = False,
+    open_pr: Annotated[
+        bool,
+        typer.Option(
+            "--open-pr/--no-open-pr",
+            help="Owner mode: push the branch and open a PR (implies --fix; needs GITHUB_TOKEN).",
+        ),
+    ] = False,
 ) -> None:
     """Scan a target agent and write an audit report (Markdown + JSON)."""
     if mode is not None and mode not in {"owner", "auditor"}:
         _err(f"--mode must be 'owner' or 'auditor', got {mode!r}")
         raise typer.Exit(code=2)
 
+    fix = fix or open_pr  # opening a PR implies applying the patches first
     token = os.environ.get("GITHUB_TOKEN")
+    if open_pr and not token:
+        _err("--open-pr needs GITHUB_TOKEN (a token with repo scope on the target).")
+        raise typer.Exit(code=2)
     # Build a real client only if a key exists; the orchestrator decides whether a
     # live client is required (owner) or an offline simulation runs (auditor).
     llm_client = _build_llm_client() if attack and os.environ.get("ANTHROPIC_API_KEY") else None
+    github_client = _build_github_client(token) if open_pr else None
     try:
         result = run(
             repo,
             requested_mode=mode,  # type: ignore[arg-type]
             token=token,
+            github_client=github_client,
             llm_client=llm_client,
             attack=attack,
+            fix=fix,
+            open_pr=open_pr,
             max_payloads=max_payloads,
             min_interval_seconds=min_interval,
             out_dir=out,
@@ -139,5 +168,8 @@ def scan(
             f"Dynamic: {dr.successes}/{dr.attempts} payloads landed "
             f"({dr.success_rate:.0%}), confidence {dr.confidence}"
         )
+    if report.applied_action != "report":
+        detail = f" ({report.action_ref})" if report.action_ref else ""
+        _ok(f"Action: {report.applied_action}{detail}")
     for path in result.written:
         typer.echo(f"  wrote {path}")

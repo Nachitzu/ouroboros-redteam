@@ -8,7 +8,7 @@
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Pydantic" src="https://img.shields.io/badge/validation-pydantic%20v2-E92063">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-74%20passing-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-93%20passing-2EA043">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-93%25-2EA043">
   <img alt="MITRE ATLAS" src="https://img.shields.io/badge/mapped%20to-MITRE%20ATLAS-8A2BE2">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
@@ -36,9 +36,10 @@ cuarto proyecto de una serie Agentic SOC: tras construir agentes defensivos
 
 ## Estado
 
-Este repositorio implementa la fundación, los tres primeros agentes reales y la
-simulación de modo auditor (semanas 1–5 del roadmap). El Patch Generator sigue
-como stub honesto y bien tipado, de modo que un escaneo siempre corre de punta a punta.
+Este repositorio implementa el pipeline completo (semanas 1–7 del roadmap): recon,
+análisis estático, ataques dinámicos (en vivo + simulados), generación de parches
+y la división owner/auditor de la salida — auditor reporta diffs sugeridos, owner
+puede abrir un PR.
 
 | Fase | Alcance | Estado |
 |------|---------|--------|
@@ -47,10 +48,11 @@ como stub honesto y bien tipado, de modo que un escaneo siempre corre de punta a
 | 3 | Static Analyzer — detección de patrones débiles mapeada a MITRE ATLAS | ✅ Completa |
 | 4 | Dynamic Attacker — campaña de payloads en vivo, con rate limit y tasa de éxito | ✅ Completa |
 | 5 | Dynamic Attacker — simulación offline de modo auditor, reporte por confianza | ✅ Completa |
-| 6 | Patch Generator — diffs de guardrails aplicables | ⬜ Stub |
+| 6 | Patch Generator — diffs de guardrails aplicables (`git apply` limpio) | ✅ Completa |
+| 7 | Salida por modo — reporte auditor / rama + PR owner vía PyGithub | ✅ Completa |
 | 7 | Salida del Orchestrator — commit / PR en modo owner | ⬜ Planeada |
 
-74 tests unitarios, 93% de cobertura de sentencias en `src/`. Ningún test toca una API real.
+93 tests unitarios, 93% de cobertura de sentencias en `src/`. Ningún test toca una API real ni GitHub.
 
 ---
 
@@ -69,6 +71,10 @@ ouroboros scan --repo ./ruta/a/algun-agente
 #   owner   -> en vivo contra un modelo real (requiere ANTHROPIC_API_KEY), confirmed-live
 #   auditor -> offline contra un mock determinista, simulated (sin key)
 ouroboros scan --repo ./ruta/a/algun-agente --attack --min-interval 1
+
+# Genera parches de guardrails. En auditor van siempre en el reporte como diffs
+# sugeridos. En owner puedes aplicarlos + commitear (`--fix`) y abrir un PR:
+ouroboros scan --repo https://github.com/tu/agente --fix --open-pr   # requiere GITHUB_TOKEN
 
 # Inspecciona el catálogo MITRE ATLAS contra el que los analizadores verifican:
 ouroboros-tool atlas verify AML.T0051
@@ -114,8 +120,8 @@ libre entre etapas, el mismo principio de los proyectos hermanos.
 | Recon | Clona, detecta lenguaje/framework, extrae system prompts y entry points del LLM | `RepoProfile` |
 | Static Analyzer | Detecta manejo débil de prompts en el código, mapea a MITRE ATLAS | `list[StaticFinding]` |
 | Dynamic Attacker | Envía payloads adversariales (directo/indirecto/jailbreak/encoding), con rate limit | `list[DynamicFinding]` + stats |
-| Patch Generator | Emite diffs de guardrails aplicables por hallazgo | `list[ProposedPatch]` |
-| Orchestrator | Resuelve el modo, coordina, ensambla y actúa | `AuditReport` |
+| Patch Generator | Emite diffs de guardrails `git apply`-limpios por hallazgo | `list[ProposedPatch]` |
+| Orchestrator | Resuelve el modo, coordina, ensambla y actúa (reporte / PR) | `AuditReport` |
 
 ---
 
@@ -142,6 +148,13 @@ offline cuyas respuestas siguen las defensas que hallaron recon y el análisis
 estático, y etiqueta cada acierto como `simulated` (confianza reducida). El reporte
 muestra ambos en grupos separados y marcados, para que un acierto simulado nunca se
 confunda con uno confirmado.
+
+La remediación se divide igual. El Patch Generator produce un diff de guardrail
+`git apply`-limpio por hallazgo, siempre incluido en el reporte como sugerencia. En
+modo **owner**, `--fix` los aplica y commitea en una rama, y `--open-pr` hace push y
+abre un PR vía PyGithub — el Ouroboros cerrándose sobre sí mismo, proponiendo un
+guardrail reforzado al agente que auditó. Ouroboros nunca modifica tu copia local:
+las ediciones de modo owner ocurren sobre un clon desechable.
 
 ---
 

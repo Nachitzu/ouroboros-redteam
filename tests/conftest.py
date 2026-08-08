@@ -45,9 +45,19 @@ class FakePermissions:
         self.push = push
 
 
+class FakePull:
+    def __init__(self, html_url: str) -> None:
+        self.html_url = html_url
+
+
 class FakeRepo:
     def __init__(self, push: bool) -> None:
         self.permissions = FakePermissions(push)
+        self.pulls: list[dict[str, Any]] = []
+
+    def create_pull(self, **kwargs: Any) -> FakePull:
+        self.pulls.append(kwargs)
+        return FakePull("https://github.com/o/n/pull/1")
 
 
 class FakeGithub:
@@ -56,11 +66,12 @@ class FakeGithub:
     def __init__(self, push: bool = True, raise_on_get: bool = False) -> None:
         self._push = push
         self._raise = raise_on_get
+        self.repo = FakeRepo(push)
 
     def get_repo(self, slug: str) -> FakeRepo:
         if self._raise:
             raise RuntimeError(f"boom for {slug}")
-        return FakeRepo(self._push)
+        return self.repo
 
 
 @pytest.fixture(autouse=True)

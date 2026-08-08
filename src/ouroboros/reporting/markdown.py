@@ -41,7 +41,10 @@ def render_markdown(report: AuditReport) -> str:
     lines.append("")
     lines.append(f"- **Target:** `{r.repo.source}`")
     lines.append(f"- **Mode:** {r.mode}")
-    lines.append(f"- **Action taken:** {r.applied_action}")
+    action_line = f"- **Action taken:** {r.applied_action}"
+    if r.action_ref:
+        action_line += f" → {r.action_ref}"
+    lines.append(action_line)
     lines.append(f"- **Generated:** {r.generated_at.isoformat()}")
     if r.repo.commit_sha:
         lines.append(f"- **Commit:** `{r.repo.commit_sha[:12]}`")

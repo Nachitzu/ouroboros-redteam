@@ -8,7 +8,7 @@
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Pydantic" src="https://img.shields.io/badge/validation-pydantic%20v2-E92063">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-74%20passing-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-93%20passing-2EA043">
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-93%25-2EA043">
   <img alt="MITRE ATLAS" src="https://img.shields.io/badge/mapped%20to-MITRE%20ATLAS-8A2BE2">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
@@ -36,9 +36,9 @@ SOAR), this one closes the loop by turning on them.
 
 ## Status
 
-This repository implements the foundation and the first three real agents plus
-the auditor-mode simulation (weeks 1–5 of the roadmap). The Patch Generator
-remains an honest, well-typed stub so a scan always runs end-to-end.
+This repository implements the full pipeline (weeks 1–7 of the roadmap): recon,
+static analysis, dynamic attacks (live + simulated), patch generation, and the
+owner/auditor output split — auditor reports suggested diffs, owner can open a PR.
 
 | Phase | Scope | State |
 |-------|-------|-------|
@@ -47,8 +47,8 @@ remains an honest, well-typed stub so a scan always runs end-to-end.
 | 3 | Static Analyzer — weak-pattern detection mapped to MITRE ATLAS | ✅ Complete |
 | 4 | Dynamic Attacker — live payload campaign, rate-limited, success rate | ✅ Complete |
 | 5 | Dynamic Attacker — offline auditor simulation, confidence-split report | ✅ Complete |
-| 6 | Patch Generator — applicable guardrail diffs | ⬜ Stubbed |
-| 7 | Orchestrator output — owner-mode commit / PR | ⬜ Planned |
+| 6 | Patch Generator — applicable guardrail diffs (`git apply`-clean) | ✅ Complete |
+| 7 | Output by mode — auditor report / owner branch + PR via PyGithub | ✅ Complete |
 
 74 unit tests, 93% statement coverage on `src/`. No test reaches a live API.
 
@@ -69,6 +69,10 @@ ouroboros scan --repo ./path/to/some-agent
 #   owner   -> live against a real model (needs ANTHROPIC_API_KEY), confirmed-live
 #   auditor -> offline against a deterministic mock target, simulated (no key)
 ouroboros scan --repo ./path/to/some-agent --attack --min-interval 1
+
+# Generate guardrail patches. Auditor mode always includes them in the report as
+# suggested diffs. Owner mode can apply + commit them (`--fix`) and open a PR:
+ouroboros scan --repo https://github.com/you/agent --fix --open-pr   # needs GITHUB_TOKEN
 
 # Inspect the MITRE ATLAS catalog the analyzers verify against:
 ouroboros-tool atlas verify AML.T0051
@@ -114,8 +118,8 @@ free text passed between stages, the same principle the sibling projects use.
 | Recon | Clone, detect language/framework, extract system prompts & LLM entry points | `RepoProfile` |
 | Static Analyzer | Detect weak prompt handling in code, map to MITRE ATLAS | `list[StaticFinding]` |
 | Dynamic Attacker | Send adversarial payloads (direct/indirect/jailbreak/encoding), rate-limited | `list[DynamicFinding]` + run stats |
-| Patch Generator | Emit applicable guardrail diffs per finding | `list[ProposedPatch]` |
-| Orchestrator | Resolve mode, coordinate, assemble and act | `AuditReport` |
+| Patch Generator | Emit `git apply`-clean guardrail diffs per finding | `list[ProposedPatch]` |
+| Orchestrator | Resolve mode, coordinate, assemble, and act (report / PR) | `AuditReport` |
 
 ---
 
@@ -140,6 +144,13 @@ third-party agent: it runs the same payloads against an offline **simulated
 target** whose responses follow the defenses recon and the static pass found, and
 labels every hit `simulated` (reduced confidence). The report renders the two in
 separate, clearly-marked groups so a mocked hit is never mistaken for a proven one.
+
+Remediation splits the same way. The Patch Generator produces a `git apply`-clean
+guardrail diff per finding, always included in the report as a suggestion. In
+**owner** mode, `--fix` applies them and commits on a branch, and `--open-pr`
+pushes and opens a PR via PyGithub — the Ouroboros closing on itself, proposing a
+hardened guardrail back to the agent it audited. Ouroboros never mutates your
+local working copy: owner-mode edits happen on a throwaway clone.
 
 ---
 

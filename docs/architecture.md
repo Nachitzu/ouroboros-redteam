@@ -35,10 +35,19 @@ resolve mode ─▶ Recon ─▶ Static Analyzer ─▶ Dynamic Attacker ─▶ 
    removes it — and answers each payload accordingly: an undefended prompt falls,
    a hardened one resists. So the simulation confirms, offline, what the static
    pass suspected, while its findings stay labelled reduced-confidence.
-5. **Patch Generator** (`agents/patch_generator.py`) — *stub (week 6)*. Will emit
-   `git apply`-able guardrail diffs per finding.
-6. **Orchestrator** (`orchestrator.py`) — runs the flow, assembles an
-   `AuditReport`, and writes Markdown + JSON. Owner-mode commit/PR lands in week 7.
+5. **Patch Generator** (`agents/patch_generator.py`) — *real (week 6)*. Emits a
+   `git apply`-clean unified diff per static finding, computed deterministically
+   with `difflib` from the real file so it always applies. Each diff inserts a
+   marked guardrail (delimiters / instruction hierarchy / output validation) as an
+   advisory comment above the offending line.
+6. **Orchestrator** (`orchestrator.py`) — acquires the checkout once (`recon.acquire`)
+   and holds it open across recon -> static -> dynamic -> patch, then dispatches
+   output by mode (`_dispatch_output`) and cleans up. Assembles the `AuditReport`
+   and writes Markdown + JSON.
+7. **Remediation** (`remediation.py`) — *owner mode, week 7*. `--fix` applies the
+   patches to the checkout and commits them on a branch; `--open-pr` pushes and
+   opens a PR via PyGithub. Auditor mode is structurally limited to `report`
+   (the `AuditReport` fail-safe), handing over the same diffs as suggestions.
 
 ## Contracts
 

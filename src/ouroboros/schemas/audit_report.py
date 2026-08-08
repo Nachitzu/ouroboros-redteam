@@ -48,6 +48,7 @@ class AuditReport(BaseModel):
     proposed_patches: list[ProposedPatch] = Field(default_factory=list)
     summary: ReportSummary = Field(default_factory=ReportSummary)
     applied_action: AppliedAction = "report"
+    action_ref: str | None = None
 
     @model_validator(mode="after")
     def _auditor_never_writes(self) -> AuditReport:
