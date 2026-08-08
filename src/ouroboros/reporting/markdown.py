@@ -2,9 +2,9 @@
 
 The report is the auditor mode's whole deliverable, so it has to be readable on
 its own. Two rules shape it: findings are grouped and counted so severity is
-visible at a glance, and every finding's confidence is shown explicitly —
-"static" from reading code, "simulated" from a mocked attack, "confirmed live"
-from a real one — so nobody mistakes a code smell for a proven exploit.
+visible at a glance, and dynamic findings are split by confidence into a
+"confirmed live" group and a "simulated" group with a standing caveat, so nobody
+mistakes a mocked hit for a proven exploit.
 """
 
 from __future__ import annotations
@@ -21,6 +21,16 @@ _CONFIDENCE_LABEL = {
     "simulated": "simulated (mocked attack — reduced confidence)",
     "confirmed_live": "confirmed live (real agent)",
 }
+
+_CONFIDENCE_BADGE = {
+    "confirmed_live": "🔴 LIVE",
+    "simulated": "🟡 SIM",
+}
+
+_SIMULATED_CAVEAT = (
+    "> ⚠️ **Simulated** — produced against a mocked target, not a live agent. "
+    "Treat these as leads to verify, not confirmed exploits."
+)
 
 
 def render_markdown(report: AuditReport) -> str:
@@ -78,10 +88,12 @@ def render_markdown(report: AuditReport) -> str:
     lines.append("## Dynamic findings")
     lines.append("")
     if r.dynamic_findings:
-        for i, df in enumerate(r.dynamic_findings, 1):
-            lines.extend(_dynamic_block(i, df))
+        lines.extend(_dynamic_section(r.dynamic_findings))
     else:
-        lines.append("_No dynamic testing was performed in this run (pass `--attack`)._")
+        lines.append(
+            "_No dynamic testing was performed in this run "
+            "(pass `--attack`: live in owner mode, simulated in auditor mode)._"
+        )
         lines.append("")
 
     lines.append("## Proposed patches")
@@ -122,10 +134,32 @@ def _static_block(i: int, f: StaticFinding) -> list[str]:
     ]
 
 
+def _dynamic_section(findings: list[DynamicFinding]) -> list[str]:
+    """Render dynamic findings split into confirmed-live and simulated groups."""
+    live = [f for f in findings if f.confidence == "confirmed_live"]
+    simulated = [f for f in findings if f.confidence == "simulated"]
+    lines: list[str] = []
+    if live:
+        lines.append("### 🔴 Confirmed-live findings")
+        lines.append("")
+        for i, f in enumerate(live, 1):
+            lines.extend(_dynamic_block(i, f))
+    if simulated:
+        lines.append("### 🟡 Simulated findings (reduced confidence)")
+        lines.append("")
+        lines.append(_SIMULATED_CAVEAT)
+        lines.append("")
+        for i, f in enumerate(simulated, 1):
+            lines.extend(_dynamic_block(i, f))
+    return lines
+
+
 def _dynamic_block(i: int, f: DynamicFinding) -> list[str]:
     atlas = ", ".join(a.technique_id for a in f.atlas) or "—"
+    badge = _CONFIDENCE_BADGE.get(f.confidence, f.confidence)
     return [
-        f"### {i}. `{f.category}` — {f.severity} ({'HIT' if f.success else 'no effect'})",
+        f"#### {i}. {badge} — `{f.category}` — {f.severity} "
+        f"({'HIT' if f.success else 'no effect'})",
         f"- Family: {f.family}",
         f"- Confidence: {_CONFIDENCE_LABEL.get(f.confidence, f.confidence)}",
         f"- Payload `{f.payload_id}`: `{f.payload}`",

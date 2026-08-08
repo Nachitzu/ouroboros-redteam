@@ -8,8 +8,8 @@
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Pydantic" src="https://img.shields.io/badge/validation-pydantic%20v2-E92063">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-55%20passing-2EA043">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-74%20passing-2EA043">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-93%25-2EA043">
   <img alt="MITRE ATLAS" src="https://img.shields.io/badge/mapped%20to-MITRE%20ATLAS-8A2BE2">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
@@ -36,9 +36,9 @@ SOAR), this one closes the loop by turning on them.
 
 ## Status
 
-This repository implements the foundation and the first three real agents
-(weeks 1–4 of the roadmap). The Patch Generator remains an honest, well-typed
-stub so a scan always runs end-to-end.
+This repository implements the foundation and the first three real agents plus
+the auditor-mode simulation (weeks 1–5 of the roadmap). The Patch Generator
+remains an honest, well-typed stub so a scan always runs end-to-end.
 
 | Phase | Scope | State |
 |-------|-------|-------|
@@ -46,11 +46,11 @@ stub so a scan always runs end-to-end.
 | 2 | Recon Agent — clone, detect stack, extract prompts & entry points | ✅ Complete |
 | 3 | Static Analyzer — weak-pattern detection mapped to MITRE ATLAS | ✅ Complete |
 | 4 | Dynamic Attacker — live payload campaign, rate-limited, success rate | ✅ Complete |
-| 5 | Dynamic Attacker — mocked-client (auditor) simulation labelling | 🟡 Partial |
+| 5 | Dynamic Attacker — offline auditor simulation, confidence-split report | ✅ Complete |
 | 6 | Patch Generator — applicable guardrail diffs | ⬜ Stubbed |
 | 7 | Orchestrator output — owner-mode commit / PR | ⬜ Planned |
 
-55 unit tests, 91% statement coverage on `src/`. No test reaches a live API.
+74 unit tests, 93% statement coverage on `src/`. No test reaches a live API.
 
 ---
 
@@ -65,8 +65,9 @@ pip install -e '.[dev]'      # or: uv sync
 # recon and static analysis are fully deterministic and offline.
 ouroboros scan --repo ./path/to/some-agent
 
-# Opt into a live prompt-injection campaign (needs ANTHROPIC_API_KEY). It sends
-# the payload library at the target's recovered prompt and records a success rate.
+# Opt into a dynamic prompt-injection campaign. `--attack` decides by mode:
+#   owner   -> live against a real model (needs ANTHROPIC_API_KEY), confirmed-live
+#   auditor -> offline against a deterministic mock target, simulated (no key)
 ouroboros scan --repo ./path/to/some-agent --attack --min-interval 1
 
 # Inspect the MITRE ATLAS catalog the analyzers verify against:
@@ -132,6 +133,13 @@ The resolution is **fail-safe by construction**: a missing token, a local path, 
 private repo, or any API error all resolve to `auditor`. The rule is not a
 convention — `AuditReport` itself rejects any auditor-mode run whose action is
 anything but `report`, so no code path can auto-write a repo it lacks access to.
+
+Dynamic testing follows the same split. In owner mode `--attack` sends real
+payloads at a real model (`confirmed_live`). In auditor mode it never touches the
+third-party agent: it runs the same payloads against an offline **simulated
+target** whose responses follow the defenses recon and the static pass found, and
+labels every hit `simulated` (reduced confidence). The report renders the two in
+separate, clearly-marked groups so a mocked hit is never mistaken for a proven one.
 
 ---
 

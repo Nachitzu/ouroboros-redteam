@@ -16,7 +16,7 @@ import typer
 
 from ouroboros import __version__
 from ouroboros.agents.recon import ReconError
-from ouroboros.orchestrator import run
+from ouroboros.orchestrator import ScanError, run
 
 app = typer.Typer(
     name="ouroboros",
@@ -48,14 +48,13 @@ def _load_dotenv() -> None:
 
 
 def _build_llm_client() -> object:
-    """Build a real Anthropic client for a live attack. Errors clearly if unkeyed.
+    """Build a real Anthropic client for a live (owner-mode) attack.
 
-    Built only here, at the edge, and only when --attack is set — the rest of the
-    pipeline takes the client as an argument and never constructs one.
+    Built only here, at the edge, and only when a key is present — the rest of the
+    pipeline takes the client as an argument and never constructs one. Whether a
+    live client is actually required is the orchestrator's call (owner mode); in
+    auditor mode it runs an offline simulation and never uses this.
     """
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        _err("--attack needs ANTHROPIC_API_KEY (set it in your environment or .env).")
-        raise typer.Exit(code=2)
     import anthropic
 
     return anthropic.Anthropic()
@@ -87,7 +86,10 @@ def scan(
         bool,
         typer.Option(
             "--attack/--no-attack",
-            help="Send live prompt-injection payloads at the target (needs ANTHROPIC_API_KEY).",
+            help=(
+                "Run a dynamic prompt-injection campaign — live in owner mode "
+                "(needs ANTHROPIC_API_KEY), simulated against a mock in auditor mode (offline)."
+            ),
         ),
     ] = False,
     max_payloads: Annotated[
@@ -104,7 +106,9 @@ def scan(
         raise typer.Exit(code=2)
 
     token = os.environ.get("GITHUB_TOKEN")
-    llm_client = _build_llm_client() if attack else None
+    # Build a real client only if a key exists; the orchestrator decides whether a
+    # live client is required (owner) or an offline simulation runs (auditor).
+    llm_client = _build_llm_client() if attack and os.environ.get("ANTHROPIC_API_KEY") else None
     try:
         result = run(
             repo,
@@ -119,6 +123,9 @@ def scan(
     except ReconError as exc:
         _err(f"recon failed: {exc}")
         raise typer.Exit(code=1) from exc
+    except ScanError as exc:
+        _err(str(exc))
+        raise typer.Exit(code=2) from exc
 
     report = result.report
     _ok(f"Scanned {repo} in {report.mode} mode.")

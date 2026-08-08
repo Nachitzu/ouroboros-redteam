@@ -19,14 +19,22 @@ resolve mode ─▶ Recon ─▶ Static Analyzer ─▶ Dynamic Attacker ─▶ 
    AST for weak prompt handling and maps each finding to a verified MITRE ATLAS
    technique. Deterministic, with an optional LLM enrichment pass that only adds
    prose and never changes which findings exist.
-4. **Dynamic Attacker** (`agents/dynamic_attacker.py`) — *real (week 4)*. Renders
-   the payload library against a fresh canary per payload and sends each through
-   the model with the target's recovered system prompt; a returned canary is a
-   hit. It **never executes the target's code** — it reconstructs and attacks the
-   prompt surface, which removes the sandboxing hazard entirely — is rate-limited,
-   opt-in (`attack=True` + a client), and never touches production. Confidence
-   follows the mode: `confirmed_live` in owner mode, `simulated` otherwise. A
-   `DynamicRunStats` records attempts/successes so the run reports a success rate.
+4. **Dynamic Attacker** (`agents/dynamic_attacker.py`) — *real (weeks 4–5)*.
+   Renders the payload library against a fresh canary per payload and sends each
+   through the target's recovered system prompt; a returned canary is a hit. It
+   **never executes the target's code** — it attacks the reconstructed prompt
+   surface, which removes the sandboxing hazard entirely — is rate-limited, opt-in
+   (`attack=True`), and never touches production. `--attack` splits by mode:
+   **owner** hits a real model (`confirmed_live`); **auditor** hits an offline
+   `SimulatedTarget` (`simulation.py`, `simulated`). A `DynamicRunStats` records
+   attempts/successes so the run reports a success rate.
+
+   The **SimulatedTarget** is a deterministic, offline stand-in for the target's
+   LLM client. It classifies the recovered system prompt's defenses (delimiters,
+   instruction hierarchy, refusal) — a static finding that contradicts a defense
+   removes it — and answers each payload accordingly: an undefended prompt falls,
+   a hardened one resists. So the simulation confirms, offline, what the static
+   pass suspected, while its findings stay labelled reduced-confidence.
 5. **Patch Generator** (`agents/patch_generator.py`) — *stub (week 6)*. Will emit
    `git apply`-able guardrail diffs per finding.
 6. **Orchestrator** (`orchestrator.py`) — runs the flow, assembles an

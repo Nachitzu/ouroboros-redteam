@@ -8,8 +8,8 @@
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Pydantic" src="https://img.shields.io/badge/validation-pydantic%20v2-E92063">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-55%20passing-2EA043">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-74%20passing-2EA043">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-93%25-2EA043">
   <img alt="MITRE ATLAS" src="https://img.shields.io/badge/mapped%20to-MITRE%20ATLAS-8A2BE2">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
@@ -36,9 +36,9 @@ cuarto proyecto de una serie Agentic SOC: tras construir agentes defensivos
 
 ## Estado
 
-Este repositorio implementa la fundación y los tres primeros agentes reales
-(semanas 1–4 del roadmap). El Patch Generator sigue como stub honesto y bien
-tipado, de modo que un escaneo siempre corre de punta a punta.
+Este repositorio implementa la fundación, los tres primeros agentes reales y la
+simulación de modo auditor (semanas 1–5 del roadmap). El Patch Generator sigue
+como stub honesto y bien tipado, de modo que un escaneo siempre corre de punta a punta.
 
 | Fase | Alcance | Estado |
 |------|---------|--------|
@@ -46,11 +46,11 @@ tipado, de modo que un escaneo siempre corre de punta a punta.
 | 2 | Recon Agent — clona, detecta stack, extrae prompts y entry points | ✅ Completa |
 | 3 | Static Analyzer — detección de patrones débiles mapeada a MITRE ATLAS | ✅ Completa |
 | 4 | Dynamic Attacker — campaña de payloads en vivo, con rate limit y tasa de éxito | ✅ Completa |
-| 5 | Dynamic Attacker — etiquetado de simulación con cliente mockeado (auditor) | 🟡 Parcial |
+| 5 | Dynamic Attacker — simulación offline de modo auditor, reporte por confianza | ✅ Completa |
 | 6 | Patch Generator — diffs de guardrails aplicables | ⬜ Stub |
 | 7 | Salida del Orchestrator — commit / PR en modo owner | ⬜ Planeada |
 
-55 tests unitarios, 91% de cobertura de sentencias en `src/`. Ningún test toca una API real.
+74 tests unitarios, 93% de cobertura de sentencias en `src/`. Ningún test toca una API real.
 
 ---
 
@@ -65,8 +65,9 @@ pip install -e '.[dev]'      # o: uv sync
 # recon y el análisis estático son totalmente deterministas y offline.
 ouroboros scan --repo ./ruta/a/algun-agente
 
-# Activa una campaña de inyección en vivo (requiere ANTHROPIC_API_KEY). Envía la
-# librería de payloads al prompt recuperado del objetivo y registra la tasa de éxito.
+# Activa una campaña de inyección dinámica. `--attack` decide por modo:
+#   owner   -> en vivo contra un modelo real (requiere ANTHROPIC_API_KEY), confirmed-live
+#   auditor -> offline contra un mock determinista, simulated (sin key)
 ouroboros scan --repo ./ruta/a/algun-agente --attack --min-interval 1
 
 # Inspecciona el catálogo MITRE ATLAS contra el que los analizadores verifican:
@@ -133,6 +134,14 @@ local, un repo privado o cualquier error de la API resuelven a `auditor`. La reg
 no es una convención: el propio `AuditReport` rechaza cualquier corrida en modo
 auditor cuya acción no sea `report`, así que ningún camino de código puede
 auto-escribir un repo al que no tiene acceso.
+
+El testeo dinámico sigue la misma división. En modo owner, `--attack` envía
+payloads reales a un modelo real (`confirmed_live`). En modo auditor nunca toca al
+agente de terceros: corre los mismos payloads contra un **objetivo simulado**
+offline cuyas respuestas siguen las defensas que hallaron recon y el análisis
+estático, y etiqueta cada acierto como `simulated` (confianza reducida). El reporte
+muestra ambos en grupos separados y marcados, para que un acierto simulado nunca se
+confunda con uno confirmado.
 
 ---
 

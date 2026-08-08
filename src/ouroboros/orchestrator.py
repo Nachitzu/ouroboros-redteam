@@ -5,12 +5,15 @@ runs recon, then the analyzers, then assembles an ``AuditReport`` and writes it
 out. Every step speaks a Pydantic contract; the orchestrator never passes free
 text between agents.
 
-Scope note (weeks 1-4): recon, the static analyzer and the dynamic attacker are
-real; the patch generator is a stub. Dynamic testing is opt-in (``attack=True``
-with a client) so a plain scan stays offline and free. Owner-mode auto-commit /
-PR arrives in week 7 — until then a run always ``report``s, even when write
-access exists, and says so. The auditor fail-safe is enforced by ``AuditReport``
-itself, so this module cannot accidentally over-reach.
+Scope note (weeks 1-5): recon, the static analyzer and the dynamic attacker are
+real; the patch generator is a stub. Dynamic testing is opt-in (``attack=True``).
+A ``--attack`` decides by mode: owner runs live against a real client
+(``confirmed_live``); auditor runs the same payloads against an offline
+``SimulatedTarget`` (``simulated``, reduced confidence), so a repo without write
+access is still exercised without touching the real agent or needing a key.
+Owner-mode auto-commit / PR arrives in week 7 — until then a run always
+``report``s, even when write access exists, and says so. The auditor fail-safe is
+enforced by ``AuditReport`` itself, so this module cannot accidentally over-reach.
 """
 
 from __future__ import annotations
@@ -24,6 +27,13 @@ from ouroboros.reporting.markdown import write_report
 from ouroboros.schemas.audit_report import AuditReport
 from ouroboros.schemas.common import Mode
 from ouroboros.schemas.dynamic_finding import DynamicFinding, DynamicRunStats
+from ouroboros.schemas.repo_profile import RepoProfile
+from ouroboros.schemas.static_finding import StaticFinding
+from ouroboros.simulation import SimulatedTarget
+
+
+class ScanError(RuntimeError):
+    """A scan could not proceed as asked (e.g. owner-mode --attack without a key)."""
 
 
 @dataclass
@@ -62,19 +72,17 @@ def run(
     static_root = None if profile.is_remote else Path(source).expanduser().resolve()
     static_findings = static_analyzer.analyze(profile, root=static_root, client=llm_client)
 
-    # 3. Dynamic attack (real, opt-in). Only runs when the caller both asks for
-    #    it and provides a client, so a plain scan never sends a payload. The
-    #    confidence label follows the mode: a real model in owner mode is
-    #    confirmed-live; anything else is simulated.
+    # 3. Dynamic attack (real, opt-in). `--attack` decides by mode: owner hits a
+    #    real client (confirmed_live); auditor hits an offline SimulatedTarget
+    #    (simulated). A plain scan sends nothing.
     dynamic_findings: list[DynamicFinding] = []
     dynamic_run: DynamicRunStats | None = None
-    if attack and llm_client is not None:
-        confidence: Literal["confirmed_live", "simulated"] = (
-            "confirmed_live" if mode == "owner" else "simulated"
-        )
+    resolved = _resolve_attack_client(mode, attack, llm_client, profile, static_findings)
+    if resolved is not None:
+        client, confidence = resolved
         campaign = dynamic_attacker.run_campaign(
             profile,
-            client=llm_client,
+            client=client,
             confidence=confidence,
             max_payloads=max_payloads,
             min_interval_seconds=min_interval_seconds,
@@ -106,6 +114,28 @@ def run(
     out = out_dir or Path("out")
     written = write_report(report, out, _stem(source))
     return ScanResult(report=report, written=written)
+
+
+def _resolve_attack_client(
+    mode: Mode,
+    attack: bool,
+    llm_client: Any | None,
+    profile: RepoProfile,
+    static_findings: list[StaticFinding],
+) -> tuple[Any, Literal["confirmed_live", "simulated"]] | None:
+    """Pick the client and confidence for a dynamic run, or None if not attacking.
+
+    Owner mode attacks a real client and needs one; auditor mode attacks an
+    offline SimulatedTarget built from what recon and the static pass learned, so
+    it never requires a key and never touches the real agent.
+    """
+    if not attack:
+        return None
+    if mode == "owner":
+        if llm_client is None:
+            raise ScanError("owner-mode --attack needs a live LLM client (set ANTHROPIC_API_KEY)")
+        return llm_client, "confirmed_live"
+    return SimulatedTarget.from_profile(profile, static_findings), "simulated"
 
 
 def _stem(source: str) -> str:

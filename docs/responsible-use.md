@@ -13,9 +13,11 @@ pointing it at anything.
 3. **Auditor mode is the default and the floor.** Without confirmed write access,
    Ouroboros only produces a report — it will not, and structurally cannot,
    mutate the target.
-4. **Dynamic analysis in auditor mode runs against a mocked client**, not the real
-   third-party agent, and its findings are labelled reduced-confidence so they are
-   never over-represented.
+4. **Dynamic analysis in auditor mode runs against an offline `SimulatedTarget`**,
+   never the real third-party agent and never a live API. Its verdicts follow the
+   target's recovered defenses, and every finding is labelled `simulated` (reduced
+   confidence) and rendered in a separate, caveated report section so a mocked hit
+   is never mistaken for a proven exploit.
 5. **Rate limiting is mandatory** for the Dynamic Attacker to avoid abusing API
    costs, even on your own repositories. It is enforced by a minimum interval
    between requests (`--min-interval`) and a per-run cap (`--max-payloads`), and

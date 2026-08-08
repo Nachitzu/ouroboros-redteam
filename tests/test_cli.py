@@ -42,10 +42,11 @@ def test_atlas_search() -> None:
     assert "AML.T0051" in result.output
 
 
-def test_attack_without_api_key_errors_cleanly(vuln_agent: Path, tmp_path: Path) -> None:
-    # --attack builds a real client at the edge; with no key it must exit 2, not crash.
+def test_attack_on_local_target_simulates_offline(vuln_agent: Path, tmp_path: Path) -> None:
+    # A local path is auditor mode: --attack runs the offline simulation with no
+    # API key, exits cleanly, and labels the run "simulated".
     result = runner.invoke(
         scan_app, ["scan", "--repo", str(vuln_agent), "--out", str(tmp_path), "--attack"]
     )
-    assert result.exit_code == 2
-    assert "ANTHROPIC_API_KEY" in result.output
+    assert result.exit_code == 0, result.output
+    assert "simulated" in result.output
