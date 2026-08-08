@@ -1,0 +1,15 @@
+{
+  "_comment": "Local subset of the MITRE ATLAS matrix (adversarial threats to ML/LLM systems) for offline use. The static and (from week 4) dynamic analyzers verify every technique_id they report against this catalog, guarding against AML.T#### hallucination. Extend as coverage grows; ids follow AML.T####[.###]. Source: https://atlas.mitre.org/",
+  "techniques": [
+    {"technique_id": "AML.T0051", "name": "LLM Prompt Injection", "tactic": "initial-access"},
+    {"technique_id": "AML.T0051.000", "name": "Direct Prompt Injection", "tactic": "initial-access"},
+    {"technique_id": "AML.T0051.001", "name": "Indirect Prompt Injection", "tactic": "initial-access"},
+    {"technique_id": "AML.T0054", "name": "LLM Jailbreak", "tactic": "privilege-escalation"},
+    {"technique_id": "AML.T0057", "name": "LLM Data Leakage", "tactic": "exfiltration"},
+    {"technique_id": "AML.T0053", "name": "LLM Plugin Compromise", "tactic": "execution"},
+    {"technique_id": "AML.T0055", "name": "Unsecured Credentials", "tactic": "credential-access"},
+    {"technique_id": "AML.T0056", "name": "LLM Meta Prompt Extraction", "tactic": "discovery"},
+    {"technique_id": "AML.T0077", "name": "LLM Response Rendering", "tactic": "impact"},
+    {"technique_id": "AML.T0048", "name": "External Harms", "tactic": "impact"}
+  ]
+}

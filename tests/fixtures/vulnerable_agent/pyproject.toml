@@ -1,0 +1,7 @@
+[project]
+name = "vulnerable-agent"
+version = "0.0.0"
+description = "Intentionally insecure agent, a test target for Ouroboros."
+
+[project.scripts]
+vuln-agent = "agent:answer"
