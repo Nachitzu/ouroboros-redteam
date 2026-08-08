@@ -42,6 +42,11 @@ FindingCategory = Literal[
     "untrusted_tool_output",
 ]
 
+# The families of adversarial payload the Dynamic Attacker sends. Kept separate
+# from FindingCategory (a weakness class) because a family is *how* the attack is
+# shaped, not *what* weakness it demonstrates.
+PayloadFamily = Literal["direct", "indirect", "jailbreak", "encoding"]
+
 _ATLAS_RE = re.compile(r"^AML\.T\d{4}(\.\d{3})?$")
 
 

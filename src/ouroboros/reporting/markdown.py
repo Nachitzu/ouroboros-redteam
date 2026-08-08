@@ -57,6 +57,13 @@ def render_markdown(report: AuditReport) -> str:
         by_cat = ", ".join(f"{k} {v}" for k, v in sorted(s.by_category.items()))
         lines.append(f"- By category: {by_cat}")
     lines.append(f"- Proposed patches: {s.patch_count}")
+    if r.dynamic_run is not None:
+        dr = r.dynamic_run
+        lines.append(
+            f"- Dynamic testing: {dr.successes}/{dr.attempts} payloads landed "
+            f"({dr.success_rate:.0%}) — confidence {dr.confidence}, "
+            f"families {', '.join(dr.families) or '—'}"
+        )
     lines.append("")
 
     lines.append("## Static findings")
@@ -74,7 +81,7 @@ def render_markdown(report: AuditReport) -> str:
         for i, df in enumerate(r.dynamic_findings, 1):
             lines.extend(_dynamic_block(i, df))
     else:
-        lines.append("_No dynamic testing was performed in this run._")
+        lines.append("_No dynamic testing was performed in this run (pass `--attack`)._")
         lines.append("")
 
     lines.append("## Proposed patches")
@@ -119,6 +126,7 @@ def _dynamic_block(i: int, f: DynamicFinding) -> list[str]:
     atlas = ", ".join(a.technique_id for a in f.atlas) or "—"
     return [
         f"### {i}. `{f.category}` — {f.severity} ({'HIT' if f.success else 'no effect'})",
+        f"- Family: {f.family}",
         f"- Confidence: {_CONFIDENCE_LABEL.get(f.confidence, f.confidence)}",
         f"- Payload `{f.payload_id}`: `{f.payload}`",
         f"- MITRE ATLAS: {atlas}",

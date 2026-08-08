@@ -8,8 +8,8 @@
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Pydantic" src="https://img.shields.io/badge/validation-pydantic%20v2-E92063">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-38%20passing-2EA043">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-90%25-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-55%20passing-2EA043">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-91%25-2EA043">
   <img alt="MITRE ATLAS" src="https://img.shields.io/badge/mapped%20to-MITRE%20ATLAS-8A2BE2">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
@@ -36,20 +36,21 @@ SOAR), this one closes the loop by turning on them.
 
 ## Status
 
-This repository currently implements the foundation and the first two real
-agents (weeks 1–3 of the roadmap). The Dynamic Attacker and Patch Generator are
-present as honest, well-typed stubs so a scan already runs end-to-end.
+This repository implements the foundation and the first three real agents
+(weeks 1–4 of the roadmap). The Patch Generator remains an honest, well-typed
+stub so a scan always runs end-to-end.
 
 | Phase | Scope | State |
 |-------|-------|-------|
 | 1 | Contracts, CLI, mode resolution, ATLAS catalog, governance | ✅ Complete |
 | 2 | Recon Agent — clone, detect stack, extract prompts & entry points | ✅ Complete |
 | 3 | Static Analyzer — weak-pattern detection mapped to MITRE ATLAS | ✅ Complete |
-| 4–5 | Dynamic Attacker — adversarial payloads (owner + auditor) | ⬜ Stubbed |
+| 4 | Dynamic Attacker — live payload campaign, rate-limited, success rate | ✅ Complete |
+| 5 | Dynamic Attacker — mocked-client (auditor) simulation labelling | 🟡 Partial |
 | 6 | Patch Generator — applicable guardrail diffs | ⬜ Stubbed |
 | 7 | Orchestrator output — owner-mode commit / PR | ⬜ Planned |
 
-38 unit tests, 90% statement coverage on `src/`. No test reaches a live API.
+55 unit tests, 91% statement coverage on `src/`. No test reaches a live API.
 
 ---
 
@@ -63,6 +64,10 @@ pip install -e '.[dev]'      # or: uv sync
 # Scan a target agent (a local path or a GitHub URL). No API key needed —
 # recon and static analysis are fully deterministic and offline.
 ouroboros scan --repo ./path/to/some-agent
+
+# Opt into a live prompt-injection campaign (needs ANTHROPIC_API_KEY). It sends
+# the payload library at the target's recovered prompt and records a success rate.
+ouroboros scan --repo ./path/to/some-agent --attack --min-interval 1
 
 # Inspect the MITRE ATLAS catalog the analyzers verify against:
 ouroboros-tool atlas verify AML.T0051
@@ -107,7 +112,7 @@ free text passed between stages, the same principle the sibling projects use.
 |-------|----------------|-----------------|
 | Recon | Clone, detect language/framework, extract system prompts & LLM entry points | `RepoProfile` |
 | Static Analyzer | Detect weak prompt handling in code, map to MITRE ATLAS | `list[StaticFinding]` |
-| Dynamic Attacker | Run adversarial payloads (direct/indirect/jailbreak/encoding) | `list[DynamicFinding]` |
+| Dynamic Attacker | Send adversarial payloads (direct/indirect/jailbreak/encoding), rate-limited | `list[DynamicFinding]` + run stats |
 | Patch Generator | Emit applicable guardrail diffs per finding | `list[ProposedPatch]` |
 | Orchestrator | Resolve mode, coordinate, assemble and act | `AuditReport` |
 

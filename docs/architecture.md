@@ -19,9 +19,14 @@ resolve mode ─▶ Recon ─▶ Static Analyzer ─▶ Dynamic Attacker ─▶ 
    AST for weak prompt handling and maps each finding to a verified MITRE ATLAS
    technique. Deterministic, with an optional LLM enrichment pass that only adds
    prose and never changes which findings exist.
-4. **Dynamic Attacker** (`agents/dynamic_attacker.py`) — *stub (weeks 4–5)*. Will
-   send adversarial payloads against a real instance (owner) or a mocked client
-   (auditor), rate-limited, never against production.
+4. **Dynamic Attacker** (`agents/dynamic_attacker.py`) — *real (week 4)*. Renders
+   the payload library against a fresh canary per payload and sends each through
+   the model with the target's recovered system prompt; a returned canary is a
+   hit. It **never executes the target's code** — it reconstructs and attacks the
+   prompt surface, which removes the sandboxing hazard entirely — is rate-limited,
+   opt-in (`attack=True` + a client), and never touches production. Confidence
+   follows the mode: `confirmed_live` in owner mode, `simulated` otherwise. A
+   `DynamicRunStats` records attempts/successes so the run reports a success rate.
 5. **Patch Generator** (`agents/patch_generator.py`) — *stub (week 6)*. Will emit
    `git apply`-able guardrail diffs per finding.
 6. **Orchestrator** (`orchestrator.py`) — runs the flow, assembles an

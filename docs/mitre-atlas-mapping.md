@@ -30,6 +30,18 @@ ouroboros-tool atlas search injection
 | `no_instruction_hierarchy` | `AML.T0051.000` (Direct) |
 | `untrusted_tool_output` | `AML.T0051.001` (Indirect) |
 
+## Dynamic payload family → ATLAS
+
+The Dynamic Attacker's payload families map as follows; every id is verified
+against the catalog before a finding carries it.
+
+| Payload family | ATLAS technique(s) |
+|----------------|--------------------|
+| `direct` | `AML.T0051` (LLM Prompt Injection), `AML.T0051.000` (Direct) |
+| `indirect` | `AML.T0051`, `AML.T0051.001` (Indirect) |
+| `jailbreak` | `AML.T0054` (LLM Jailbreak) |
+| `encoding` | `AML.T0051` (obfuscated direct injection) |
+
 ## Extending the catalog
 
 Add entries to `data/atlas/atlas-techniques.json` as coverage grows; ids follow

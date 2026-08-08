@@ -40,3 +40,12 @@ def test_atlas_search() -> None:
     result = runner.invoke(tool_app, ["atlas", "search", "injection"])
     assert result.exit_code == 0
     assert "AML.T0051" in result.output
+
+
+def test_attack_without_api_key_errors_cleanly(vuln_agent: Path, tmp_path: Path) -> None:
+    # --attack builds a real client at the edge; with no key it must exit 2, not crash.
+    result = runner.invoke(
+        scan_app, ["scan", "--repo", str(vuln_agent), "--out", str(tmp_path), "--attack"]
+    )
+    assert result.exit_code == 2
+    assert "ANTHROPIC_API_KEY" in result.output

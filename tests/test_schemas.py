@@ -56,6 +56,7 @@ def test_summary_counts_by_severity_and_category() -> None:
         category="direct_interpolation",
         severity="CRITICAL",
         confidence="simulated",
+        family="direct",
         payload_id="p1",
         payload="ignore all",
         observed_behavior="obeyed",

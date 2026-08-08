@@ -14,10 +14,11 @@ from ouroboros.schemas.common import (
     Confidence,
     FindingCategory,
     Mode,
+    PayloadFamily,
     Severity,
     now_utc,
 )
-from ouroboros.schemas.dynamic_finding import DynamicFinding
+from ouroboros.schemas.dynamic_finding import DynamicFinding, DynamicRunStats
 from ouroboros.schemas.proposed_patch import ProposedPatch
 from ouroboros.schemas.repo_profile import EntryPoint, ExtractedPrompt, RepoProfile
 from ouroboros.schemas.static_finding import StaticFinding
@@ -28,10 +29,12 @@ __all__ = [
     "AuditReport",
     "Confidence",
     "DynamicFinding",
+    "DynamicRunStats",
     "EntryPoint",
     "ExtractedPrompt",
     "FindingCategory",
     "Mode",
+    "PayloadFamily",
     "ProposedPatch",
     "RepoProfile",
     "ReportSummary",

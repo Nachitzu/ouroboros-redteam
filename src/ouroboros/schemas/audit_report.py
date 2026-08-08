@@ -17,7 +17,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 from ouroboros.schemas.common import Mode, now_utc
-from ouroboros.schemas.dynamic_finding import DynamicFinding
+from ouroboros.schemas.dynamic_finding import DynamicFinding, DynamicRunStats
 from ouroboros.schemas.proposed_patch import ProposedPatch
 from ouroboros.schemas.repo_profile import RepoProfile
 from ouroboros.schemas.static_finding import StaticFinding
@@ -44,6 +44,7 @@ class AuditReport(BaseModel):
     generated_at: datetime = Field(default_factory=now_utc)
     static_findings: list[StaticFinding] = Field(default_factory=list)
     dynamic_findings: list[DynamicFinding] = Field(default_factory=list)
+    dynamic_run: DynamicRunStats | None = None
     proposed_patches: list[ProposedPatch] = Field(default_factory=list)
     summary: ReportSummary = Field(default_factory=ReportSummary)
     applied_action: AppliedAction = "report"

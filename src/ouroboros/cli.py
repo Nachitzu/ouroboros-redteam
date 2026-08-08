@@ -47,6 +47,20 @@ def _load_dotenv() -> None:
     load_dotenv(find_dotenv(usecwd=True), override=False)
 
 
+def _build_llm_client() -> object:
+    """Build a real Anthropic client for a live attack. Errors clearly if unkeyed.
+
+    Built only here, at the edge, and only when --attack is set — the rest of the
+    pipeline takes the client as an argument and never constructs one.
+    """
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        _err("--attack needs ANTHROPIC_API_KEY (set it in your environment or .env).")
+        raise typer.Exit(code=2)
+    import anthropic
+
+    return anthropic.Anthropic()
+
+
 @app.callback()
 def main() -> None:
     """Load local configuration before any command runs."""
@@ -69,9 +83,20 @@ def scan(
         typer.Option("--mode", help="Force 'auditor' for a read-only run. Never grants owner."),
     ] = None,
     out: Annotated[Path, typer.Option("--out", "-o", help="Output directory.")] = Path("out"),
+    attack: Annotated[
+        bool,
+        typer.Option(
+            "--attack/--no-attack",
+            help="Send live prompt-injection payloads at the target (needs ANTHROPIC_API_KEY).",
+        ),
+    ] = False,
     max_payloads: Annotated[
-        int, typer.Option("--max-payloads", help="Dynamic Attacker rate limit (weeks 4+).")
+        int, typer.Option("--max-payloads", help="Cap on payloads sent per dynamic run.")
     ] = 20,
+    min_interval: Annotated[
+        float,
+        typer.Option("--min-interval", help="Minimum seconds between attack requests."),
+    ] = 1.0,
 ) -> None:
     """Scan a target agent and write an audit report (Markdown + JSON)."""
     if mode is not None and mode not in {"owner", "auditor"}:
@@ -79,12 +104,16 @@ def scan(
         raise typer.Exit(code=2)
 
     token = os.environ.get("GITHUB_TOKEN")
+    llm_client = _build_llm_client() if attack else None
     try:
         result = run(
             repo,
             requested_mode=mode,  # type: ignore[arg-type]
             token=token,
+            llm_client=llm_client,
+            attack=attack,
             max_payloads=max_payloads,
+            min_interval_seconds=min_interval,
             out_dir=out,
         )
     except ReconError as exc:
@@ -97,5 +126,11 @@ def scan(
         f"Findings: {report.summary.total_findings} "
         f"(static {report.summary.static_count}, dynamic {report.summary.dynamic_count})"
     )
+    if report.dynamic_run is not None:
+        dr = report.dynamic_run
+        typer.echo(
+            f"Dynamic: {dr.successes}/{dr.attempts} payloads landed "
+            f"({dr.success_rate:.0%}), confidence {dr.confidence}"
+        )
     for path in result.written:
         typer.echo(f"  wrote {path}")

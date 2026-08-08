@@ -16,8 +16,10 @@ pointing it at anything.
 4. **Dynamic analysis in auditor mode runs against a mocked client**, not the real
    third-party agent, and its findings are labelled reduced-confidence so they are
    never over-represented.
-5. **Rate limiting is mandatory** for the Dynamic Attacker (from week 4) to avoid
-   abusing API costs, even on your own repositories.
+5. **Rate limiting is mandatory** for the Dynamic Attacker to avoid abusing API
+   costs, even on your own repositories. It is enforced by a minimum interval
+   between requests (`--min-interval`) and a per-run cap (`--max-payloads`), and
+   the attacker never executes the target's code — it only sends strings to a model.
 
 ## Why the safeguards exist
 

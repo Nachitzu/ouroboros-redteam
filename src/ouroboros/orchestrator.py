@@ -5,23 +5,25 @@ runs recon, then the analyzers, then assembles an ``AuditReport`` and writes it
 out. Every step speaks a Pydantic contract; the orchestrator never passes free
 text between agents.
 
-Scope note (weeks 1-3): recon and the static analyzer are real; the dynamic
-attacker and patch generator are stubs returning empty results. Owner-mode
-auto-commit / PR arrives in week 7 — until then a run always ``report``s, even
-when write access exists, and says so. The auditor fail-safe is enforced by
-``AuditReport`` itself, so this module cannot accidentally over-reach.
+Scope note (weeks 1-4): recon, the static analyzer and the dynamic attacker are
+real; the patch generator is a stub. Dynamic testing is opt-in (``attack=True``
+with a client) so a plain scan stays offline and free. Owner-mode auto-commit /
+PR arrives in week 7 — until then a run always ``report``s, even when write
+access exists, and says so. The auditor fail-safe is enforced by ``AuditReport``
+itself, so this module cannot accidentally over-reach.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from ouroboros.agents import dynamic_attacker, patch_generator, recon, static_analyzer
 from ouroboros.reporting.markdown import write_report
 from ouroboros.schemas.audit_report import AuditReport
 from ouroboros.schemas.common import Mode
+from ouroboros.schemas.dynamic_finding import DynamicFinding, DynamicRunStats
 
 
 @dataclass
@@ -39,7 +41,9 @@ def run(
     token: str | None = None,
     github_client: object | None = None,
     llm_client: Any | None = None,
+    attack: bool = False,
     max_payloads: int = 20,
+    min_interval_seconds: float = 1.0,
     out_dir: Path | None = None,
 ) -> ScanResult:
     """Scan ``source`` end-to-end and return the assembled report.
@@ -58,20 +62,37 @@ def run(
     static_root = None if profile.is_remote else Path(source).expanduser().resolve()
     static_findings = static_analyzer.analyze(profile, root=static_root, client=llm_client)
 
-    # 3. Dynamic + patch: stubs today, real in weeks 4-6. Wired now so the shape
-    #    of a full run is already correct.
-    dynamic_findings = dynamic_attacker.attack(
-        profile, client=llm_client, max_payloads=max_payloads
-    )
+    # 3. Dynamic attack (real, opt-in). Only runs when the caller both asks for
+    #    it and provides a client, so a plain scan never sends a payload. The
+    #    confidence label follows the mode: a real model in owner mode is
+    #    confirmed-live; anything else is simulated.
+    dynamic_findings: list[DynamicFinding] = []
+    dynamic_run: DynamicRunStats | None = None
+    if attack and llm_client is not None:
+        confidence: Literal["confirmed_live", "simulated"] = (
+            "confirmed_live" if mode == "owner" else "simulated"
+        )
+        campaign = dynamic_attacker.run_campaign(
+            profile,
+            client=llm_client,
+            confidence=confidence,
+            max_payloads=max_payloads,
+            min_interval_seconds=min_interval_seconds,
+        )
+        dynamic_findings = campaign.findings
+        dynamic_run = campaign.stats()
+
+    # 4. Patch generation: stub until week 6.
     patches = patch_generator.generate(static_findings, dynamic_findings)
 
-    # 4. Assemble. applied_action stays "report": owner-mode writing lands in
+    # 5. Assemble. applied_action stays "report": owner-mode writing lands in
     #    week 7, and the auditor fail-safe in AuditReport forbids anything else.
     report = AuditReport(
         repo=profile,
         mode=mode,
         static_findings=static_findings,
         dynamic_findings=dynamic_findings,
+        dynamic_run=dynamic_run,
         proposed_patches=patches,
         applied_action="report",
     ).with_summary()
