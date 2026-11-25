@@ -14,6 +14,7 @@ touches the network.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any, TypeVar
@@ -36,6 +37,16 @@ T = TypeVar("T", bound=BaseModel)
 
 class LLMError(RuntimeError):
     """The model could not produce a valid contract within the retry budget."""
+
+
+def resolve_model(explicit: str | None = None) -> str:
+    """Resolve the model name: explicit override -> ``OUROBOROS_MODEL`` -> ``DEFAULT_MODEL``."""
+    if explicit and explicit.strip():
+        return explicit.strip()
+    env_model = os.environ.get("OUROBOROS_MODEL", "").strip()
+    if env_model:
+        return env_model
+    return DEFAULT_MODEL
 
 
 # --------------------------------------------------------------------------
@@ -126,9 +137,22 @@ def extract_json_object(text: str) -> dict[str, Any]:
 
 
 def _text_of(blocks: Any) -> str:
-    return "\n".join(
-        block.text for block in blocks if getattr(block, "type", None) == "text"
-    ).strip()
+    if blocks is None:
+        return ""
+    if isinstance(blocks, str):
+        return blocks.strip()
+    parts: list[str] = []
+    for block in blocks:
+        if isinstance(block, dict):
+            if block.get("type") == "text":
+                text = block.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        elif getattr(block, "type", None) == "text":
+            text = getattr(block, "text", None)
+            if isinstance(text, str):
+                parts.append(text)
+    return "\n".join(parts).strip()
 
 
 # --------------------------------------------------------------------------
@@ -140,7 +164,7 @@ def complete_validated(
     client: Any,
     system: str,
     user: str,
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
     max_tokens: int = MAX_TOKENS,
     max_attempts: int = MAX_VALIDATION_ATTEMPTS,
 ) -> T:
@@ -152,11 +176,12 @@ def complete_validated(
     ``max_attempts`` times, then raises ``LLMError``. A loud failure is always
     preferable to an unvalidated finding reaching a report.
     """
+    resolved_model = resolve_model(model)
     messages: list[dict[str, Any]] = [{"role": "user", "content": user}]
     last_error = ""
     for _ in range(max_attempts):
         response = client.messages.create(
-            model=model,
+            model=resolved_model,
             max_tokens=max_tokens,
             system=cacheable_system(system),
             messages=messages,

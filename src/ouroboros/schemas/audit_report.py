@@ -16,8 +16,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from ouroboros import __version__
 from ouroboros.schemas.common import Mode, now_utc
-from ouroboros.schemas.dynamic_finding import DynamicFinding, DynamicRunStats
+from ouroboros.schemas.dynamic_finding import DynamicFinding, DynamicRunStats, PatchVerification
 from ouroboros.schemas.proposed_patch import ProposedPatch
 from ouroboros.schemas.repo_profile import RepoProfile
 from ouroboros.schemas.static_finding import StaticFinding
@@ -31,6 +32,7 @@ class ReportSummary(BaseModel):
     total_findings: int = 0
     by_severity: dict[str, int] = Field(default_factory=dict)
     by_category: dict[str, int] = Field(default_factory=dict)
+    by_owasp: dict[str, int] = Field(default_factory=dict)
     static_count: int = 0
     dynamic_count: int = 0
     patch_count: int = 0
@@ -39,6 +41,7 @@ class ReportSummary(BaseModel):
 class AuditReport(BaseModel):
     """Everything one Ouroboros scan concluded about one target."""
 
+    tool_version: str = __version__
     repo: RepoProfile
     mode: Mode
     generated_at: datetime = Field(default_factory=now_utc)
@@ -46,6 +49,7 @@ class AuditReport(BaseModel):
     dynamic_findings: list[DynamicFinding] = Field(default_factory=list)
     dynamic_run: DynamicRunStats | None = None
     proposed_patches: list[ProposedPatch] = Field(default_factory=list)
+    patch_verification: PatchVerification | None = None
     summary: ReportSummary = Field(default_factory=ReportSummary)
     applied_action: AppliedAction = "report"
     action_ref: str | None = None
@@ -69,16 +73,21 @@ class AuditReport(BaseModel):
         """
         severity: Counter[str] = Counter()
         category: Counter[str] = Counter()
-        for static in self.static_findings:
-            severity[static.severity] += 1
-            category[static.category] += 1
-        for dynamic in self.dynamic_findings:
-            severity[dynamic.severity] += 1
-            category[dynamic.category] += 1
+        owasp: Counter[str] = Counter()
+        findings: list[StaticFinding | DynamicFinding] = [
+            *self.static_findings,
+            *self.dynamic_findings,
+        ]
+        for finding in findings:
+            severity[finding.severity] += 1
+            category[finding.category] += 1
+            for risk in finding.owasp:
+                owasp[risk.risk_id] += 1
         summary = ReportSummary(
-            total_findings=len(self.static_findings) + len(self.dynamic_findings),
+            total_findings=len(findings),
             by_severity=dict(severity),
             by_category=dict(category),
+            by_owasp=dict(owasp),
             static_count=len(self.static_findings),
             dynamic_count=len(self.dynamic_findings),
             patch_count=len(self.proposed_patches),

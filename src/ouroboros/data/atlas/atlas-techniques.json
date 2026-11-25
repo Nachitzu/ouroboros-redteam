@@ -1,0 +1,583 @@
+{
+  "_meta": {
+    "atlas_version": "4.9.0-curated",
+    "generated": "2026-04-01",
+    "note": "Curated offline subset of the MITRE ATLAS matrix (adversarial threats to ML, LLM, and agentic AI systems). Use `ouroboros-tool atlas sync --from <ATLAS.yaml>` to rebuild from upstream mitre-atlas/atlas-data."
+  },
+  "techniques": [
+    {
+      "technique_id": "AML.T0000",
+      "name": "Search for Victim's Publicly Available Research Materials",
+      "tactic": "reconnaissance",
+      "description": "Adversaries gather papers, blog posts, and documentation describing the victim's AI/ML architecture.",
+      "mitigations": ["AML.M0000"]
+    },
+    {
+      "technique_id": "AML.T0001",
+      "name": "Search for Publicly Available Adversarial Vulnerability Analysis",
+      "tactic": "reconnaissance",
+      "description": "Adversaries search public vulnerability disclosures and jailbreak repositories targeting the model family.",
+      "mitigations": ["AML.M0016"]
+    },
+    {
+      "technique_id": "AML.T0002",
+      "name": "Acquire Public ML Artifacts",
+      "tactic": "resource-development",
+      "description": "Adversaries obtain public pretrained weights, tokenizers, or benchmark datasets to craft attacks.",
+      "mitigations": ["AML.M0000"]
+    },
+    {
+      "technique_id": "AML.T0005",
+      "name": "Create Proxy ML Model",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries train or fine-tune a surrogate model to develop transferable adversarial inputs.",
+      "mitigations": ["AML.M0004", "AML.M0002"]
+    },
+    {
+      "technique_id": "AML.T0006",
+      "name": "Active Scanning",
+      "tactic": "reconnaissance",
+      "description": "Adversaries probe exposed AI endpoints to map supported models, tools, and guardrails.",
+      "mitigations": ["AML.M0004", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0007",
+      "name": "Discover ML Artifacts",
+      "tactic": "discovery",
+      "description": "Adversaries locate model weights, embeddings, prompts, or datasets on compromised systems.",
+      "mitigations": ["AML.M0005", "AML.M0012"]
+    },
+    {
+      "technique_id": "AML.T0010",
+      "name": "ML Supply Chain Compromise",
+      "tactic": "initial-access",
+      "description": "Adversaries tamper with upstream models, packages, MCP servers, or datasets used by the AI system.",
+      "mitigations": ["AML.M0013", "AML.M0014", "AML.M0011"]
+    },
+    {
+      "technique_id": "AML.T0010.000",
+      "name": "GPU Hardware",
+      "tactic": "initial-access",
+      "description": "Compromise of accelerator hardware or firmware in the ML supply chain.",
+      "mitigations": ["AML.M0014"]
+    },
+    {
+      "technique_id": "AML.T0010.001",
+      "name": "ML Software",
+      "tactic": "initial-access",
+      "description": "Compromise of ML libraries, frameworks, plugins, or serialization loaders.",
+      "mitigations": ["AML.M0011", "AML.M0013", "AML.M0016"]
+    },
+    {
+      "technique_id": "AML.T0010.002",
+      "name": "Data",
+      "tactic": "initial-access",
+      "description": "Compromise of third-party training, fine-tuning, or retrieval datasets.",
+      "mitigations": ["AML.M0007", "AML.M0014"]
+    },
+    {
+      "technique_id": "AML.T0010.003",
+      "name": "Model",
+      "tactic": "initial-access",
+      "description": "Compromise of pretrained or hosted foundation models in the supply chain.",
+      "mitigations": ["AML.M0013", "AML.M0014", "AML.M0008"]
+    },
+    {
+      "technique_id": "AML.T0011",
+      "name": "User Execution",
+      "tactic": "execution",
+      "description": "Adversaries rely on a user opening or passing untrusted artifacts to an AI system.",
+      "mitigations": ["AML.M0018", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0012",
+      "name": "Valid Accounts",
+      "tactic": "initial-access",
+      "description": "Adversaries abuse legitimate API keys or user credentials to access AI services.",
+      "mitigations": ["AML.M0019", "AML.M0012"]
+    },
+    {
+      "technique_id": "AML.T0013",
+      "name": "Discover ML Model Ontology",
+      "tactic": "discovery",
+      "description": "Adversaries probe label spaces, schemas, or supported output categories of a model.",
+      "mitigations": ["AML.M0004", "AML.M0002"]
+    },
+    {
+      "technique_id": "AML.T0014",
+      "name": "Discover ML Model Family",
+      "tactic": "discovery",
+      "description": "Adversaries identify the underlying architecture or foundation model family.",
+      "mitigations": ["AML.M0004", "AML.M0002"]
+    },
+    {
+      "technique_id": "AML.T0015",
+      "name": "Evade ML Model",
+      "tactic": "defense-evasion",
+      "description": "Adversaries alter inputs so classifiers, guardrails, or detectors misclassify them.",
+      "mitigations": ["AML.M0003", "AML.M0006", "AML.M0015"]
+    },
+    {
+      "technique_id": "AML.T0018",
+      "name": "Backdoor ML Model",
+      "tactic": "persistence",
+      "description": "Adversaries embed hidden trigger behaviors into model weights or fine-tuned adapters.",
+      "mitigations": ["AML.M0008", "AML.M0007", "AML.M0014"]
+    },
+    {
+      "technique_id": "AML.T0018.000",
+      "name": "Poison ML Model",
+      "tactic": "persistence",
+      "description": "Adversaries modify model weights or training runs to introduce a backdoor.",
+      "mitigations": ["AML.M0008", "AML.M0014"]
+    },
+    {
+      "technique_id": "AML.T0018.001",
+      "name": "Inject Payload",
+      "tactic": "persistence",
+      "description": "Adversaries embed executable code or malicious deserialization payloads inside model files.",
+      "mitigations": ["AML.M0011", "AML.M0013", "AML.M0014"]
+    },
+    {
+      "technique_id": "AML.T0019",
+      "name": "Publish Poisoned Datasets",
+      "tactic": "resource-development",
+      "description": "Adversaries host manipulated datasets online expecting victims to ingest them.",
+      "mitigations": ["AML.M0007", "AML.M0014"]
+    },
+    {
+      "technique_id": "AML.T0020",
+      "name": "Poison Training Data",
+      "tactic": "persistence",
+      "description": "Adversaries corrupt training or fine-tuning corpora to degrade integrity or implant triggers.",
+      "mitigations": ["AML.M0007", "AML.M0005"]
+    },
+    {
+      "technique_id": "AML.T0024",
+      "name": "Exfiltration via ML Inference API",
+      "tactic": "exfiltration",
+      "description": "Adversaries infer sensitive training data or proprietary model properties via API queries.",
+      "mitigations": ["AML.M0004", "AML.M0002", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0024.000",
+      "name": "Infer Training Data Membership",
+      "tactic": "exfiltration",
+      "description": "Adversaries determine whether specific records were present in the training set.",
+      "mitigations": ["AML.M0004", "AML.M0002"]
+    },
+    {
+      "technique_id": "AML.T0024.001",
+      "name": "Invert ML Model",
+      "tactic": "exfiltration",
+      "description": "Adversaries reconstruct representative training examples from model outputs.",
+      "mitigations": ["AML.M0004", "AML.M0002"]
+    },
+    {
+      "technique_id": "AML.T0024.002",
+      "name": "Extract ML Model",
+      "tactic": "exfiltration",
+      "description": "Adversaries query an inference API to functionally replicate a proprietary model.",
+      "mitigations": ["AML.M0004", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0025",
+      "name": "Exfiltration via Cyber Means",
+      "tactic": "exfiltration",
+      "description": "Adversaries steal AI artifacts or conversation logs using traditional network exfiltration.",
+      "mitigations": ["AML.M0005", "AML.M0012"]
+    },
+    {
+      "technique_id": "AML.T0029",
+      "name": "Denial of ML Service",
+      "tactic": "impact",
+      "description": "Adversaries flood or craft degenerate inputs to exhaust model compute or availability.",
+      "mitigations": ["AML.M0004", "AML.M0015", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0031",
+      "name": "Erode ML Model Integrity",
+      "tactic": "impact",
+      "description": "Adversaries degrade accuracy, calibration, or trustworthiness of an AI system over time.",
+      "mitigations": ["AML.M0008", "AML.M0023"]
+    },
+    {
+      "technique_id": "AML.T0034",
+      "name": "Cost Harvesting",
+      "tactic": "impact",
+      "description": "Adversaries trigger expensive token generation or compute loops to inflate victim costs.",
+      "mitigations": ["AML.M0004", "AML.M0019", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0035",
+      "name": "ML Artifact Collection",
+      "tactic": "collection",
+      "description": "Adversaries collect model checkpoints, prompts, or vector stores from the environment.",
+      "mitigations": ["AML.M0005", "AML.M0012"]
+    },
+    {
+      "technique_id": "AML.T0036",
+      "name": "Data from Information Repositories",
+      "tactic": "collection",
+      "description": "Adversaries leverage AI connectors or RAG access to collect sensitive repository data.",
+      "mitigations": ["AML.M0019", "AML.M0025"]
+    },
+    {
+      "technique_id": "AML.T0037",
+      "name": "Data from Local System",
+      "tactic": "collection",
+      "description": "Adversaries coerce an agent into reading sensitive local files or environment data.",
+      "mitigations": ["AML.M0025", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0040",
+      "name": "ML Model Inference API Access",
+      "tactic": "ml-model-access",
+      "description": "Adversaries interact with a target model solely through its exposed inference API.",
+      "mitigations": ["AML.M0004", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0042",
+      "name": "Verify Attack",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries validate crafted adversarial inputs against local or staging targets before deployment.",
+      "mitigations": ["AML.M0000", "AML.M0023"]
+    },
+    {
+      "technique_id": "AML.T0043",
+      "name": "Craft Adversarial Data",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries generate inputs designed to induce targeted misbehavior in an ML model.",
+      "mitigations": ["AML.M0003", "AML.M0010", "AML.M0015"]
+    },
+    {
+      "technique_id": "AML.T0043.000",
+      "name": "White-Box Optimization",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries use model gradients or internals to optimize adversarial inputs.",
+      "mitigations": ["AML.M0000", "AML.M0003"]
+    },
+    {
+      "technique_id": "AML.T0043.001",
+      "name": "Black-Box Optimization",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries iteratively query the target API to optimize adversarial inputs.",
+      "mitigations": ["AML.M0004", "AML.M0015"]
+    },
+    {
+      "technique_id": "AML.T0043.002",
+      "name": "Black-Box Transfer",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries craft inputs on a proxy model and transfer them to the target.",
+      "mitigations": ["AML.M0003", "AML.M0006"]
+    },
+    {
+      "technique_id": "AML.T0043.003",
+      "name": "Manual Modification",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries manually iterate prompts or inputs to bypass filters and steer outputs.",
+      "mitigations": ["AML.M0015", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0043.004",
+      "name": "Insert Backdoor Trigger",
+      "tactic": "ml-attack-staging",
+      "description": "Adversaries embed a known trigger token or pattern into an input to activate a backdoor.",
+      "mitigations": ["AML.M0008", "AML.M0015"]
+    },
+    {
+      "technique_id": "AML.T0044",
+      "name": "Full ML Model Access",
+      "tactic": "ml-model-access",
+      "description": "Adversaries have white-box access to model weights, architecture, and hyperparameters.",
+      "mitigations": ["AML.M0000", "AML.M0005"]
+    },
+    {
+      "technique_id": "AML.T0046",
+      "name": "Spamming ML System with Chaff Data",
+      "tactic": "impact",
+      "description": "Adversaries flood an AI-assisted triage or detection pipeline with noise to hide real alerts.",
+      "mitigations": ["AML.M0004", "AML.M0015"]
+    },
+    {
+      "technique_id": "AML.T0047",
+      "name": "ML-Enabled Product or Service",
+      "tactic": "ml-model-access",
+      "description": "Adversaries access the AI model indirectly through a customer-facing product feature.",
+      "mitigations": ["AML.M0019", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0048",
+      "name": "External Harms",
+      "tactic": "impact",
+      "description": "Adversaries abuse an AI system to cause financial, reputational, user, or IP harms.",
+      "mitigations": ["AML.M0020", "AML.M0021", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0048.000",
+      "name": "Financial Harm",
+      "tactic": "impact",
+      "description": "AI system manipulation leading to unauthorized transactions or financial loss.",
+      "mitigations": ["AML.M0024", "AML.M0025"]
+    },
+    {
+      "technique_id": "AML.T0048.001",
+      "name": "Reputational Harm",
+      "tactic": "impact",
+      "description": "AI system manipulation producing defamatory or brand-damaging outputs.",
+      "mitigations": ["AML.M0020", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0048.002",
+      "name": "Societal Harm",
+      "tactic": "impact",
+      "description": "Abuse of AI outputs to cause broad misinformation or societal disruption.",
+      "mitigations": ["AML.M0020", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0048.003",
+      "name": "User Harm",
+      "tactic": "impact",
+      "description": "AI system manipulation resulting in unsafe advice, phishing, or harm to end users.",
+      "mitigations": ["AML.M0020", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0048.004",
+      "name": "ML Intellectual Property Theft",
+      "tactic": "impact",
+      "description": "Extraction of proprietary prompts, fine-tuned weights, or RAG knowledge.",
+      "mitigations": ["AML.M0000", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0049",
+      "name": "Exploit Public-Facing Application",
+      "tactic": "initial-access",
+      "description": "Adversaries exploit software vulnerabilities in web wrappers, APIs, or agent orchestration endpoints.",
+      "mitigations": ["AML.M0016", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0050",
+      "name": "Command and Scripting Interpreter",
+      "tactic": "execution",
+      "description": "Adversaries coerce an LLM or agent into emitting or executing shell, Python, or OS commands.",
+      "mitigations": ["AML.M0020", "AML.M0024", "AML.M0025"]
+    },
+    {
+      "technique_id": "AML.T0051",
+      "name": "LLM Prompt Injection",
+      "tactic": "initial-access",
+      "description": "Adversaries craft inputs that override system instructions or hijack an LLM agent's control flow.",
+      "mitigations": ["AML.M0015", "AML.M0020", "AML.M0021", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0051.000",
+      "name": "Direct Prompt Injection",
+      "tactic": "initial-access",
+      "description": "Adversaries supply adversarial instructions directly in the user prompt.",
+      "mitigations": ["AML.M0015", "AML.M0020", "AML.M0021", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0051.001",
+      "name": "Indirect Prompt Injection",
+      "tactic": "initial-access",
+      "description": "Adversaries embed instructions inside untrusted documents, web pages, emails, or tool outputs.",
+      "mitigations": ["AML.M0015", "AML.M0020", "AML.M0021", "AML.M0024"]
+    },
+    {
+      "technique_id": "AML.T0052",
+      "name": "Phishing",
+      "tactic": "initial-access",
+      "description": "Adversaries deliver malicious links or prompt-injection lures via email or messaging.",
+      "mitigations": ["AML.M0018", "AML.M0015"]
+    },
+    {
+      "technique_id": "AML.T0053",
+      "name": "LLM Plugin Compromise",
+      "tactic": "execution",
+      "description": "Adversaries hijack plugins, function calls, or MCP tools via poisoned descriptions or arguments.",
+      "mitigations": ["AML.M0020", "AML.M0024", "AML.M0025"]
+    },
+    {
+      "technique_id": "AML.T0054",
+      "name": "LLM Jailbreak",
+      "tactic": "privilege-escalation",
+      "description": "Adversaries use persona framing, role-play, or policy bypasses to override model alignment.",
+      "mitigations": ["AML.M0020", "AML.M0021", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0055",
+      "name": "Unsecured Credentials",
+      "tactic": "credential-access",
+      "description": "Adversaries extract API keys, secrets, or tokens embedded in prompts, code, or agent memory.",
+      "mitigations": ["AML.M0012", "AML.M0019", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0056",
+      "name": "LLM Meta Prompt Extraction",
+      "tactic": "discovery",
+      "description": "Adversaries trick an LLM into revealing its hidden system prompt or developer instructions.",
+      "mitigations": ["AML.M0020", "AML.M0021", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0057",
+      "name": "LLM Data Leakage",
+      "tactic": "exfiltration",
+      "description": "Adversaries cause an LLM to disclose confidential context, PII, or proprietary RAG data.",
+      "mitigations": ["AML.M0019", "AML.M0020", "AML.M0025"]
+    },
+    {
+      "technique_id": "AML.T0058",
+      "name": "Publish Hallucinated Entities",
+      "tactic": "resource-development",
+      "description": "Adversaries register package names or URLs frequently hallucinated by LLMs (slopsquatting).",
+      "mitigations": ["AML.M0014", "AML.M0016"]
+    },
+    {
+      "technique_id": "AML.T0059",
+      "name": "Activation Triggers",
+      "tactic": "persistence",
+      "description": "Adversaries plant conditional instructions that activate only when specific keywords appear.",
+      "mitigations": ["AML.M0015", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0060",
+      "name": "Publish Poisoned Models",
+      "tactic": "resource-development",
+      "description": "Adversaries upload trojaned checkpoints or LoRAs to public model hubs.",
+      "mitigations": ["AML.M0013", "AML.M0014"]
+    },
+    {
+      "technique_id": "AML.T0061",
+      "name": "LLM Prompt Self-Replication",
+      "tactic": "persistence",
+      "description": "Adversaries craft self-propagating prompts that copy themselves across agent messages or memory.",
+      "mitigations": ["AML.M0015", "AML.M0020", "AML.M0024"]
+    },
+    {
+      "technique_id": "AML.T0062",
+      "name": "Discover LLM System Information",
+      "tactic": "discovery",
+      "description": "Adversaries enumerate model version, context window, or connected tools via probing.",
+      "mitigations": ["AML.M0020", "AML.M0021"]
+    },
+    {
+      "technique_id": "AML.T0063",
+      "name": "Discover LLM Hallucinations",
+      "tactic": "discovery",
+      "description": "Adversaries probe an LLM to identify recurring fabricated packages, domains, or facts.",
+      "mitigations": ["AML.M0020", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0064",
+      "name": "Gather RAG-Indexed Targets",
+      "tactic": "reconnaissance",
+      "description": "Adversaries identify documents or data sources indexed into a victim's RAG pipeline.",
+      "mitigations": ["AML.M0019", "AML.M0005"]
+    },
+    {
+      "technique_id": "AML.T0065",
+      "name": "LLM Prompt Crafting",
+      "tactic": "resource-development",
+      "description": "Adversaries develop and refine reusable injection templates and jailbreak wrappers.",
+      "mitigations": ["AML.M0015", "AML.M0020", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0066",
+      "name": "Retrieval Content Crafting",
+      "tactic": "resource-development",
+      "description": "Adversaries prepare external web pages, tickets, or documents containing hidden prompt injections.",
+      "mitigations": ["AML.M0015", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0067",
+      "name": "LLM Trusted Output Components Manipulation",
+      "tactic": "defense-evasion",
+      "description": "Adversaries spoof structured delimiters, citations, or tool-output markers to bypass trust boundaries.",
+      "mitigations": ["AML.M0020", "AML.M0021"]
+    },
+    {
+      "technique_id": "AML.T0068",
+      "name": "LLM Prompt Obfuscation",
+      "tactic": "defense-evasion",
+      "description": "Adversaries encode, translate, or obfuscate prompts (base64, homoglyphs, zero-width) to evade filters.",
+      "mitigations": ["AML.M0010", "AML.M0015", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0069",
+      "name": "Discover LLM System Configurations",
+      "tactic": "discovery",
+      "description": "Adversaries extract system prompts, tool schemas, or guardrail configurations.",
+      "mitigations": ["AML.M0020", "AML.M0021"]
+    },
+    {
+      "technique_id": "AML.T0069.000",
+      "name": "System Prompt",
+      "tactic": "discovery",
+      "description": "Discovery of hidden system or developer instructions governing the model.",
+      "mitigations": ["AML.M0020", "AML.M0021", "AML.M0022"]
+    },
+    {
+      "technique_id": "AML.T0069.001",
+      "name": "Tool Definitions",
+      "tactic": "discovery",
+      "description": "Discovery of available tools, MCP schemas, and parameter constraints.",
+      "mitigations": ["AML.M0019", "AML.M0025"]
+    },
+    {
+      "technique_id": "AML.T0069.002",
+      "name": "Guardrails",
+      "tactic": "discovery",
+      "description": "Probing of content filters, moderation classifiers, and refusal triggers.",
+      "mitigations": ["AML.M0015", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0070",
+      "name": "RAG Poisoning",
+      "tactic": "persistence",
+      "description": "Adversaries insert adversarial content into a vector store or knowledge base for later retrieval.",
+      "mitigations": ["AML.M0007", "AML.M0019", "AML.M0015"]
+    },
+    {
+      "technique_id": "AML.T0071",
+      "name": "False RAG Entry Injection",
+      "tactic": "defense-evasion",
+      "description": "Adversaries inject fabricated entries into RAG stores to skew retrieval ranking and answers.",
+      "mitigations": ["AML.M0007", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0077",
+      "name": "LLM Response Rendering",
+      "tactic": "impact",
+      "description": "Adversaries abuse Markdown images, links, or HTML rendered from LLM outputs to exfiltrate data or run scripts.",
+      "mitigations": ["AML.M0020", "AML.M0019"]
+    },
+    {
+      "technique_id": "AML.T0080",
+      "name": "AI Agent Context Poisoning",
+      "tactic": "persistence",
+      "description": "Adversaries corrupt an agent's persistent memory or active conversation thread.",
+      "mitigations": ["AML.M0015", "AML.M0020", "AML.M0023"]
+    },
+    {
+      "technique_id": "AML.T0080.000",
+      "name": "Memory",
+      "tactic": "persistence",
+      "description": "Poisoning of long-term agent memory stores across sessions.",
+      "mitigations": ["AML.M0015", "AML.M0019", "AML.M0020"]
+    },
+    {
+      "technique_id": "AML.T0080.001",
+      "name": "Thread",
+      "tactic": "persistence",
+      "description": "Poisoning of the active multi-turn conversation thread or scratchpad.",
+      "mitigations": ["AML.M0015", "AML.M0020", "AML.M0021"]
+    },
+    {
+      "technique_id": "AML.T0086",
+      "name": "Exfiltration via AI Agent Tool Invocation",
+      "tactic": "exfiltration",
+      "description": "Adversaries steer an agent into calling outbound tools (email, HTTP, webhooks) with sensitive data.",
+      "mitigations": ["AML.M0020", "AML.M0024", "AML.M0025"]
+    }
+  ]
+}

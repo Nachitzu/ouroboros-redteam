@@ -1,49 +1,44 @@
-# MITRE ATLAS mapping
+# MITRE ATLAS & OWASP GenAI Mapping
 
-Ouroboros maps every finding to [MITRE ATLAS](https://atlas.mitre.org/), the
-adversarial-threat matrix for ML/LLM systems — the ATLAS analogue of the ATT&CK
-mapping used elsewhere in the series.
+Ouroboros maps every finding to [MITRE ATLAS](https://atlas.mitre.org/) and the
+[OWASP Top 10 for LLM / Agentic Applications](https://genai.owasp.org/), plus
+CWE identifiers for static code weaknesses.
 
-## How mapping is kept honest
+## Anti-hallucination verification
 
-A model, or a careless detector, can invent a plausible-looking technique id. So
-the id a finding carries is verified for **shape** (by the `AtlasTechnique`
-schema, regex `^AML\.T\d{4}(\.\d{3})?$`) and for **existence** (against the
-bundled catalog at `data/atlas/atlas-techniques.json`, via
-`ouroboros.tools.atlas.verify_atlas_technique`). A well-formed but non-existent id
-is dropped rather than surfaced.
+Every `technique_id` (`AML.T####[.###]`) and OWASP `risk_id`
+(`LLM##:2025` / `ASI##:2026`) is verified offline against the bundled catalogs at
+`src/ouroboros/data/atlas/atlas-techniques.json` (82 techniques/sub-techniques,
+plus 23 mitigations in `atlas-mitigations.json`) and
+`src/ouroboros/data/owasp/owasp-genai.json` (20 risks + cross-walks). Unknown ids
+are dropped rather than surfaced.
 
-Confirm or search the catalog from the CLI:
+Inspect or sync the catalogs from the CLI:
 
 ```bash
 ouroboros-tool atlas verify AML.T0051
 ouroboros-tool atlas search injection
+ouroboros-tool atlas mitigations AML.T0051
+ouroboros-tool atlas sync --from /path/to/atlas-data/dist/ATLAS.yaml
+
+ouroboros-tool owasp verify LLM01:2025
+ouroboros-tool owasp map excessive_agency
 ```
 
-## Static detector → ATLAS
+## Category → ATLAS / OWASP / CWE
 
-| Finding category | ATLAS technique(s) |
-|------------------|--------------------|
-| `direct_interpolation` | `AML.T0051` (LLM Prompt Injection), `AML.T0051.001` (Indirect) |
-| `missing_delimiters` | `AML.T0051` |
-| `no_output_validation` | `AML.T0077` (LLM Response Rendering) |
-| `no_instruction_hierarchy` | `AML.T0051.000` (Direct) |
-| `untrusted_tool_output` | `AML.T0051.001` (Indirect) |
-
-## Dynamic payload family → ATLAS
-
-The Dynamic Attacker's payload families map as follows; every id is verified
-against the catalog before a finding carries it.
-
-| Payload family | ATLAS technique(s) |
-|----------------|--------------------|
-| `direct` | `AML.T0051` (LLM Prompt Injection), `AML.T0051.000` (Direct) |
-| `indirect` | `AML.T0051`, `AML.T0051.001` (Indirect) |
-| `jailbreak` | `AML.T0054` (LLM Jailbreak) |
-| `encoding` | `AML.T0051` (obfuscated direct injection) |
-
-## Extending the catalog
-
-Add entries to `data/atlas/atlas-techniques.json` as coverage grows; ids follow
-`AML.T####[.###]`. The file carries a `_comment` documenting itself, and the
-loader is cached (`_atlas_catalog.cache_clear()` in tests that swap the data dir).
+| Category | ATLAS | OWASP | CWE |
+|----------|-------|-------|-----|
+| `direct_interpolation` | `AML.T0051`, `AML.T0051.001` | `LLM01:2025` | `CWE-77`, `CWE-1427` |
+| `missing_delimiters` | `AML.T0051` | `LLM01:2025` | `CWE-77` |
+| `untrusted_tool_output` | `AML.T0051.001` | `LLM01:2025`, `ASI01:2026` | `CWE-77`, `CWE-20` |
+| `no_instruction_hierarchy` | `AML.T0051.000` | `LLM01:2025` | `CWE-1427` |
+| `no_output_validation` | `AML.T0077` | `LLM05:2025` | `CWE-20` |
+| `improper_output_handling` | `AML.T0077`, `AML.T0051`, `AML.T0086` | `LLM05:2025`, `ASI05:2026` | `CWE-94`, `CWE-78`, `CWE-89`, `CWE-22` |
+| `excessive_agency` | `AML.T0053`, `AML.T0050` | `LLM06:2025`, `ASI02:2026`, `ASI03:2026` | `CWE-250`, `CWE-862` |
+| `mcp_tool_poisoning` | `AML.T0053`, `AML.T0051.001` | `LLM01:2025`, `LLM03:2025`, `ASI04:2026` | `CWE-94`, `CWE-77` |
+| `prompt_leakage_risk` | `AML.T0056`, `AML.T0057` | `LLM07:2025` | `CWE-200`, `CWE-798` |
+| `system_prompt_extraction` | `AML.T0056` | `LLM07:2025` | `CWE-200` |
+| `tool_hijack` | `AML.T0053`, `AML.T0051.001` | `LLM06:2025`, `ASI02:2026`, `ASI01:2026` | `CWE-862` |
+| `data_exfiltration` | `AML.T0057` | `LLM02:2025`, `LLM05:2025` | `CWE-201` |
+| `over_refusal` | — | — | — |

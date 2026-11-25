@@ -2,15 +2,16 @@
 
 <p align="center">
   <em>Un agente de IA que hace red-team a agentes de IA — <code>prompt-injection-redteam-agent</code>.<br>
-  Audita, ataca y (pronto) parcha a los propios agentes LLM que construye su autor.</em>
+  Audita, ataca, verifica y parcha los propios agentes LLM que construye su autor.</em>
 </p>
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="Pydantic" src="https://img.shields.io/badge/validation-pydantic%20v2-E92063">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-93%20passing-2EA043">
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-93%25-2EA043">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-166%20passing-2EA043">
+  <img alt="Coverage" src="https://img.shields.io/badge/coverage-89%25-2EA043">
   <img alt="MITRE ATLAS" src="https://img.shields.io/badge/mapped%20to-MITRE%20ATLAS-8A2BE2">
+  <img alt="OWASP LLM 2025" src="https://img.shields.io/badge/OWASP-LLM%20%26%20Agentic-orange">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
@@ -21,38 +22,50 @@
 ## Visión general
 
 Ouroboros Red Team es un agente multi-etapa que analiza agentes basados en LLM en
-busca de debilidades ante *prompt injection*, los ataca donde puede hacerlo de
-forma segura, y genera parches concretos (guardrails) para lo que encuentra. Es el
-cuarto proyecto de una serie Agentic SOC: tras construir agentes defensivos
-(triage, extracción de IOCs, SOAR), este cierra el ciclo volviéndose contra ellos.
+busca de debilidades ante *prompt injection* y riesgos agénticos, los prueba con
+packs curados basados en oráculos deterministas, verifica el impacto real de los
+parches sobre el prompt y genera salidas en SARIF 2.1.0, Markdown, JSON y PRs de
+remediación.
 
 > **El Ouroboros** —la serpiente que se muerde la cola— representa perfectamente un
 > agente que audita y ataca a los otros agentes que tú mismo creaste: un sistema
-> que se examina a sí mismo. Es exactamente lo que hace esta herramienta.
+> que se examina a sí mismo.
 
 **Autor:** Nachitzu — AI Security Engineer, Blue Team + arquitectura de agentes de IA.
 
 ---
 
-## Estado
+## Capacidades principales
 
-Este repositorio implementa el pipeline completo (semanas 1–7 del roadmap): recon,
-análisis estático, ataques dinámicos (en vivo + simulados), generación de parches
-y la división owner/auditor de la salida — auditor reporta diffs sugeridos, owner
-puede abrir un PR.
+- **Recon multi-SDK (`recon.py`):** Detecta Anthropic, OpenAI, Google GenAI,
+  LiteLLM, LangChain, LangGraph, LlamaIndex, PydanticAI, CrewAI, AutoGen, OpenAI
+  Agents SDK y servidores MCP; extrae prompts de código, `AnnAssign`, bloques
+  Markdown, plantillas `.txt`/`.prompt`/`.j2`, YAML/JSON y literales JS/TS;
+  inventaría herramientas expuestas con sus capacidades y confirmación humana.
+- **Análisis estático y taint por función (`static_analyzer.py`):** 9 categorías
+  (`direct_interpolation`, `missing_delimiters`, `no_output_validation`,
+  `no_instruction_hierarchy`, `untrusted_tool_output`,
+  `improper_output_handling`, `excessive_agency`, `mcp_tool_poisoning`,
+  `prompt_leakage_risk`) mapeadas a MITRE ATLAS, OWASP LLM 2025 / Agentic Top 10
+  y CWE, con enriquecimiento opcional vía LLM (`--enrich`).
+- **Atacante dinámico y oráculos deterministas (`dynamic_attacker.py`, `oracles.py`, `providers.py`):**
+  Ataques multi-turno y de secuestro de herramientas (sin ejecutar código del
+  objetivo) evaluados por oráculos (`canary`, `extraction`, `tool_call`,
+  `exfiltration`, `benign` anti sobre-rechazo), mutaciones adaptativas
+  (`--adaptive`), soporte para Anthropic, OpenAI / compatibles (`--base-url`),
+  Gemini y `SimulatedTarget` multilingüe offline (`simulation.py`).
+- **7 packs de payloads integrados (132 sondas):** `core`, `extraction`,
+  `indirect-bipia`, `tool-hijack`, `soc-blueteam`, `multilingual` y
+  `benign-controls`, además de importador CSV/JSONL (`ouroboros-tool datasets import`).
+  Ver [`docs/datasets.md`](docs/datasets.md).
+- **Endurecimiento real de prompts, verificación e integración CI:** Diffs
+  multi-hunk por archivo + reescritura real `prompt_hardening`, verificación de
+  caída del ASR (`--verify-patches`), salida `--sarif` 2.1.0, gates `--fail-on` /
+  `--fail-on-asr`, comando `ouroboros diff` y ramas sin colisiones + PR contra
+  `default_branch`.
 
-| Fase | Alcance | Estado |
-|------|---------|--------|
-| 1 | Contratos, CLI, resolución de modo, catálogo ATLAS, gobernanza | ✅ Completa |
-| 2 | Recon Agent — clona, detecta stack, extrae prompts y entry points | ✅ Completa |
-| 3 | Static Analyzer — detección de patrones débiles mapeada a MITRE ATLAS | ✅ Completa |
-| 4 | Dynamic Attacker — campaña de payloads en vivo, con rate limit y tasa de éxito | ✅ Completa |
-| 5 | Dynamic Attacker — simulación offline de modo auditor, reporte por confianza | ✅ Completa |
-| 6 | Patch Generator — diffs de guardrails aplicables (`git apply` limpio) | ✅ Completa |
-| 7 | Salida por modo — reporte auditor / rama + PR owner vía PyGithub | ✅ Completa |
-| 7 | Salida del Orchestrator — commit / PR en modo owner | ⬜ Planeada |
-
-93 tests unitarios, 93% de cobertura de sentencias en `src/`. Ningún test toca una API real ni GitHub.
+166 tests unitarios pasando (1 test opcional omitido por ausencia del repo hermano),
+89% de cobertura en `src/ouroboros/`. Ningún test toca APIs reales ni GitHub.
 
 ---
 
@@ -61,144 +74,51 @@ puede abrir un PR.
 ```bash
 git clone https://github.com/Nachitzu/ouroboros-redteam.git
 cd ouroboros-redteam
-pip install -e '.[dev]'      # o: uv sync
+pip install -e '.[dev]'      # o con extras: pip install -e '.[all,dev]'
 
-# Escanea un agente objetivo (ruta local o URL de GitHub). No requiere API key:
-# recon y el análisis estático son totalmente deterministas y offline.
-ouroboros scan --repo ./ruta/a/algun-agente
+# Escaneo determinista y offline + SARIF:
+ouroboros scan --repo ./ruta/a/algun-agente --sarif
 
-# Activa una campaña de inyección dinámica. `--attack` decide por modo:
-#   owner   -> en vivo contra un modelo real (requiere ANTHROPIC_API_KEY), confirmed-live
-#   auditor -> offline contra un mock determinista, simulated (sin key)
-ouroboros scan --repo ./ruta/a/algun-agente --attack --min-interval 1
+# Campaña dinámica (en vivo en owner; SimulatedTarget offline en auditor):
+ouroboros scan --repo ./ruta/a/algun-agente --attack --pack core,soc-blueteam --adaptive --verify-patches
 
-# Genera parches de guardrails. En auditor van siempre en el reporte como diffs
-# sugeridos. En owner puedes aplicarlos + commitear (`--fix`) y abrir un PR:
-ouroboros scan --repo https://github.com/tu/agente --fix --open-pr   # requiere GITHUB_TOKEN
+# Gates de CI y comparación entre dos escaneos:
+ouroboros scan --repo ./ruta/a/algun-agente --fail-on HIGH
+ouroboros diff out/before.json out/after.json --fail-on-regression
 
-# Inspecciona el catálogo MITRE ATLAS contra el que los analizadores verifican:
+# Remediación en modo owner (requiere GITHUB_TOKEN con permisos de push):
+ouroboros scan --repo https://github.com/tu/agente --fix --open-pr
+
+# Consultar catálogos ATLAS, OWASP y packs offline:
 ouroboros-tool atlas verify AML.T0051
-ouroboros-tool atlas search injection
+ouroboros-tool owasp map excessive_agency
+ouroboros-tool payloads list
+ouroboros-tool datasets list
 ```
 
-Un escaneo escribe `out/<objetivo>.md` y `out/<objetivo>.json`.
+Cada escaneo escribe `out/<objetivo>.md`, `out/<objetivo>.json` y (con `--sarif`)
+`out/<objetivo>.sarif`.
 
 ---
 
-## Arquitectura
+## Arquitectura y modo owner vs auditor
 
-Cada frontera entre agentes es un contrato Pydantic v2 validado — no se pasa texto
-libre entre etapas, el mismo principio de los proyectos hermanos.
-
-```
-                 ┌──────────────┐
-   repo/url ───▶ │ Recon Agent  │ ──▶ RepoProfile
-                 └──────────────┘         │
-                          ┌───────────────┴───────────────┐
-                          ▼                               ▼
-                 ┌──────────────────┐          ┌────────────────────┐
-                 │ Static Analyzer  │          │  Dynamic Attacker  │
-                 │ (AST + ATLAS)    │          │  (payloads, sem 4) │
-                 └──────────────────┘          └────────────────────┘
-                          │  StaticFinding[]        DynamicFinding[]  │
-                          └───────────────┬───────────────┘
-                                          ▼
-                                 ┌──────────────────┐
-                                 │ Patch Generator  │ ──▶ ProposedPatch[]
-                                 │   (sem 6)        │
-                                 └──────────────────┘
-                                          │
-                                          ▼
-                                 ┌──────────────────┐
-                                 │  Orchestrator    │ ──▶ AuditReport
-                                 └──────────────────┘        │
-                          owner: commit / PR  ◀──────────────┴──────────────▶  auditor: reporte
-```
-
-| Agente | Responsabilidad | Contrato de salida |
-|--------|-----------------|--------------------|
-| Recon | Clona, detecta lenguaje/framework, extrae system prompts y entry points del LLM | `RepoProfile` |
-| Static Analyzer | Detecta manejo débil de prompts en el código, mapea a MITRE ATLAS | `list[StaticFinding]` |
-| Dynamic Attacker | Envía payloads adversariales (directo/indirecto/jailbreak/encoding), con rate limit | `list[DynamicFinding]` + stats |
-| Patch Generator | Emite diffs de guardrails `git apply`-limpios por hallazgo | `list[ProposedPatch]` |
-| Orchestrator | Resuelve el modo, coordina, ensambla y actúa (reporte / PR) | `AuditReport` |
+Cada frontera entre agentes es un contrato Pydantic v2 validado (ver
+[`docs/architecture.md`](docs/architecture.md)). La resolución de acceso es
+**fail-safe a `auditor`**: rutas locales, ausencia de token, falta de permiso
+`push` o errores de API resuelven siempre a solo lectura, y `AuditReport` prohíbe
+estructuralmente cualquier acción distinta de `report` en modo auditor.
 
 ---
 
-## Cómo funciona — owner vs auditor
+## Catálogos de amenazas y uso responsable
 
-Ouroboros resuelve una pregunta antes de hacer nada: ¿tienes permiso de escritura
-sobre el objetivo?
-
-- **owner** — permiso de `push` confirmado vía la API de GitHub. Solo aquí puede
-  (desde la semana 7) commitear un guardrail o abrir un PR.
-- **auditor** — todo lo demás. Produce un reporte con diffs sugeridos y nunca
-  escribe en el repo.
-
-La resolución es **fail-safe por construcción**: la ausencia de token, una ruta
-local, un repo privado o cualquier error de la API resuelven a `auditor`. La regla
-no es una convención: el propio `AuditReport` rechaza cualquier corrida en modo
-auditor cuya acción no sea `report`, así que ningún camino de código puede
-auto-escribir un repo al que no tiene acceso.
-
-El testeo dinámico sigue la misma división. En modo owner, `--attack` envía
-payloads reales a un modelo real (`confirmed_live`). En modo auditor nunca toca al
-agente de terceros: corre los mismos payloads contra un **objetivo simulado**
-offline cuyas respuestas siguen las defensas que hallaron recon y el análisis
-estático, y etiqueta cada acierto como `simulated` (confianza reducida). El reporte
-muestra ambos en grupos separados y marcados, para que un acierto simulado nunca se
-confunda con uno confirmado.
-
-La remediación se divide igual. El Patch Generator produce un diff de guardrail
-`git apply`-limpio por hallazgo, siempre incluido en el reporte como sugerencia. En
-modo **owner**, `--fix` los aplica y commitea en una rama, y `--open-pr` hace push y
-abre un PR vía PyGithub — el Ouroboros cerrándose sobre sí mismo, proponiendo un
-guardrail reforzado al agente que auditó. Ouroboros nunca modifica tu copia local:
-las ediciones de modo owner ocurren sobre un clon desechable.
-
----
-
-## Mapeo a MITRE ATLAS
-
-Los hallazgos se mapean a [MITRE ATLAS](https://atlas.mitre.org/) —la matriz de
-amenazas adversariales para sistemas de ML/LLM— igual que los proyectos hermanos
-mapean a ATT&CK. El *prompt injection* es `AML.T0051`. Cada id de técnica que
-lleva un hallazgo se verifica contra un catálogo offline antes de publicarse, de
-modo que un detector nunca puede adjuntar una técnica que no existe. Ver
-[`docs/mitre-atlas-mapping.md`](docs/mitre-atlas-mapping.md).
-
----
-
-## Uso responsable
-
-Es una herramienta de **red team ético / defensa**. Sirve para endurecer agentes
-que posees o que estás autorizado a probar.
-
-- **Nunca la corras contra producción.** Apunta solo a checkouts locales o staging.
-- **Nunca ataques agentes de terceros sin permiso.** El fail-safe a modo auditor y
-  el análisis con cliente simulado existen para que una corrida no autorizada no
-  pueda mutar un objetivo — pero la autorización sigue siendo tu responsabilidad.
-
-Guía completa en [`docs/responsible-use.md`](docs/responsible-use.md).
-
----
-
-## Estructura del repositorio
-
-```
-src/ouroboros/
-├── schemas/        # contratos Pydantic v2 — el único vocabulario entre agentes
-├── agents/         # recon (real), static_analyzer (real), dynamic/patch (stubs)
-├── tools/atlas.py  # catálogo MITRE ATLAS offline + verify/search
-├── github_access.py# resolución owner/auditor, fail-safe a auditor
-├── orchestrator.py # todo el flujo, en un solo lugar
-├── reporting/      # AuditReport -> Markdown + JSON
-├── cli.py          # `ouroboros scan`
-└── toolcli.py      # `ouroboros-tool atlas ...`
-data/atlas/         # catálogo de técnicas ATLAS incluido
-docs/               # arquitectura, mapeo ATLAS, uso responsable
-tests/              # tests por módulo + un fixture vulnerable sembrado
-```
+- **Catálogos:** [`docs/mitre-atlas-mapping.md`](docs/mitre-atlas-mapping.md)
+  documenta las 82 técnicas ATLAS, 23 mitigaciones, riesgos OWASP LLM 2025 /
+  Agentic y CWEs. [`docs/datasets.md`](docs/datasets.md) describe los 7 packs de
+  payloads y el importador de datasets.
+- **Uso responsable:** [`docs/responsible-use.md`](docs/responsible-use.md).
+  Nunca ejecutes Ouroboros contra producción ni contra agentes sin autorización.
 
 ---
 
@@ -206,24 +126,9 @@ tests/              # tests por módulo + un fixture vulnerable sembrado
 
 ```bash
 ruff check . && ruff format --check . && mypy src
+ouroboros-tool payloads verify && ouroboros-tool datasets verify
 pytest --cov=ouroboros --cov-report=term-missing
 ```
-
-La suite fija los dos criterios de hito: el Static Analyzer detecta ≥3 categorías
-de debilidad en un fixture sembrado, y el Recon Agent extrae el system prompt real
-de un proyecto hermano cuando está clonado junto a este.
-
----
-
-## Relacionados
-
-Parte de una serie Agentic SOC. Juntos forman un pipeline de blue team —
-extracción de inteligencia → enriquecimiento → triage de alertas → respuesta a
-incidentes— y este proyecto gira la lente sobre el propio pipeline:
-
-- [ai-soc-triage-agent](https://github.com/Nachitzu/ai-soc-triage-agent)
-- [ai-ioc-extraction-agent](https://github.com/Nachitzu/ai-ioc-extraction-agent)
-- [ai-incident-response-orchestrator](https://github.com/Nachitzu/ai-incident-response-orchestrator)
 
 ---
 

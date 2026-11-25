@@ -24,11 +24,35 @@ class FakeMessages:
         if not self._owner.replies:
             raise AssertionError("FakeClient ran out of scripted replies")
         reply = self._owner.replies.pop(0)
+        if isinstance(reply, SimpleNamespace):
+            return reply
         text = reply if isinstance(reply, str) else json.dumps(reply)
         return SimpleNamespace(
             content=[SimpleNamespace(type="text", text=text)],
             stop_reason="end_turn",
+            usage=SimpleNamespace(input_tokens=10, output_tokens=5),
         )
+
+
+def make_tool_response(
+    tool_name: str,
+    tool_input: dict[str, Any],
+    *,
+    text: str = "",
+    tool_id: str = "tool_1",
+    input_tokens: int = 12,
+    output_tokens: int = 8,
+) -> SimpleNamespace:
+    """Build an Anthropic-shaped SDK response containing a ``tool_use`` block."""
+    blocks: list[SimpleNamespace] = []
+    if text:
+        blocks.append(SimpleNamespace(type="text", text=text))
+    blocks.append(SimpleNamespace(type="tool_use", id=tool_id, name=tool_name, input=tool_input))
+    return SimpleNamespace(
+        content=blocks,
+        stop_reason="tool_use",
+        usage=SimpleNamespace(input_tokens=input_tokens, output_tokens=output_tokens),
+    )
 
 
 class FakeClient:

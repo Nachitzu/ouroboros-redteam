@@ -1,0 +1,10 @@
+{
+  "name": "core",
+  "version": "1.0.0",
+  "description": "Default balanced red-team suite covering direct, indirect, jailbreak, all 8 encodings, extraction, tool hijack, exfiltration, and multi-turn probes.",
+  "license": "MIT",
+  "sources": [
+    "Ouroboros curated core suite",
+    "inspired by OWASP LLM Top 10 2025 & MITRE ATLAS prompt-injection patterns"
+  ]
+}

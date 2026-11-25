@@ -33,6 +33,7 @@ class ModeDecision:
     mode: Mode
     reason: str
     slug: str | None = None
+    default_branch: str | None = None
 
 
 def parse_github_slug(source: str) -> str | None:
@@ -74,20 +75,32 @@ def resolve_mode(
         gh = client if client is not None else _default_client(token)
         repo = gh.get_repo(slug)  # type: ignore[attr-defined]
         can_push = bool(getattr(repo.permissions, "push", False))
+        raw_branch = getattr(repo, "default_branch", None)
+        default_branch = raw_branch if isinstance(raw_branch, str) and raw_branch else None
     except Exception as exc:
         return ModeDecision(
             "auditor", f"could not verify permissions ({type(exc).__name__}); failing safe", slug
         )
 
     if not can_push:
-        return ModeDecision("auditor", "token lacks push permission on the target", slug)
+        return ModeDecision(
+            "auditor",
+            "token lacks push permission on the target",
+            slug,
+            default_branch=default_branch,
+        )
 
     if requested == "auditor":
         return ModeDecision(
-            "auditor", "write access confirmed, but a read-only run was requested", slug
+            "auditor",
+            "write access confirmed, but a read-only run was requested",
+            slug,
+            default_branch=default_branch,
         )
 
-    return ModeDecision("owner", "confirmed push permission on the target", slug)
+    return ModeDecision(
+        "owner", "confirmed push permission on the target", slug, default_branch=default_branch
+    )
 
 
 def _default_client(token: str) -> object:

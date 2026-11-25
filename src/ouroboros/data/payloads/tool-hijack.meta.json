@@ -1,0 +1,10 @@
+{
+  "name": "tool-hijack",
+  "version": "1.0.0",
+  "description": "Indirect and direct agentic tool-hijack probes steering tool invocations with canary arguments.",
+  "license": "MIT",
+  "sources": [
+    "inspired by InjecAgent tool-misuse benchmark",
+    "inspired by AgentDojo agentic security benchmark"
+  ]
+}

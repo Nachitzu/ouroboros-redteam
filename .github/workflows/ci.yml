@@ -27,5 +27,9 @@ jobs:
         run: ruff format --check .
       - name: Type check
         run: mypy src
+      - name: Verify catalogs and payload packs
+        run: |
+          ouroboros-tool payloads verify
+          ouroboros-tool datasets verify
       - name: Test
         run: pytest --cov=ouroboros --cov-report=term-missing

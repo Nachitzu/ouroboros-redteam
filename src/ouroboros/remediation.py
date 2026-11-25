@@ -1,10 +1,9 @@
 """Owner-mode remediation: apply guardrail patches and open a pull request.
 
-Week 7, the owner side of the mode split. In owner mode Ouroboros may write to the
-target, so this module takes the patches the generator produced and turns them
-into a real change: it applies them to the checkout, commits them on a branch,
-and (when asked) pushes and opens a PR via PyGithub. This closes the Ouroboros
-loop — the agent proposes a reinforced guardrail back to the very agent it audited.
+In owner mode Ouroboros may write to the target, so this module takes the
+patches the generator produced and turns them into a real change: it applies
+them to the checkout, commits them on a collision-free branch, and (when asked)
+pushes and opens a PR against the repository's default branch via PyGithub.
 
 Everything with a side effect is injectable so it can be exercised without touching
 GitHub: ``apply_patches`` and ``commit_on_branch`` run against a real local git repo
@@ -38,12 +37,13 @@ class RemediationError(RuntimeError):
 def apply_patches(root: Path, patches: list[ProposedPatch]) -> list[str]:
     """Apply each patch's diff to ``root`` with ``git apply``; return applied refs.
 
-    Patches are applied one at a time; one that no longer applies (e.g. an earlier
-    guardrail shifted its context past git's fuzz) is skipped rather than aborting
-    the batch, so the commit carries every guardrail that did land.
+    Prompt-hardening patches are applied before advisory comment patches so
+    rewritten prompts land cleanly; any patch that still fails to apply is
+    skipped rather than aborting the batch.
     """
+    ordered = sorted(patches, key=lambda p: 0 if p.kind == "prompt_hardening" else 1)
     applied: list[str] = []
-    for patch in patches:
+    for patch in ordered:
         result = subprocess.run(
             ["git", "apply", "--whitespace=nowarn", "-"],
             cwd=root,
@@ -56,6 +56,57 @@ def apply_patches(root: Path, patches: list[ProposedPatch]) -> list[str]:
     if not applied:
         raise RemediationError("no patch applied cleanly to the checkout")
     return applied
+
+
+def unique_branch_name(root: Path, base_name: str = DEFAULT_BRANCH) -> str:
+    """Return ``base_name`` or a numbered suffix if that branch already exists."""
+    existing = _existing_branches(root)
+    if base_name not in existing:
+        return base_name
+    for idx in range(2, 100):
+        candidate = f"{base_name}-{idx}"
+        if candidate not in existing:
+            return candidate
+    raise RemediationError(f"could not pick an unused branch name starting with {base_name!r}")
+
+
+def _existing_branches(root: Path) -> set[str]:
+    result = subprocess.run(
+        ["git", "branch", "-a", "--format=%(refname:short)"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return set()
+    names: set[str] = set()
+    for line in result.stdout.splitlines():
+        name = line.strip()
+        if not name:
+            continue
+        names.add(name.removeprefix("origin/"))
+    return names
+
+
+def detect_default_branch(root: Path, fallback: str = DEFAULT_BASE) -> str:
+    """Infer the checkout's default branch from HEAD or ``origin/HEAD``."""
+    head = subprocess.run(
+        ["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if head.returncode == 0 and head.stdout.strip():
+        return head.stdout.strip().removeprefix("origin/")
+    current = subprocess.run(
+        ["git", "branch", "--show-current"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+    )
+    if current.returncode == 0 and current.stdout.strip():
+        return current.stdout.strip()
+    return fallback
 
 
 def commit_on_branch(root: Path, branch: str, message: str) -> str:

@@ -1,0 +1,10 @@
+{
+  "name": "extraction",
+  "version": "1.0.0",
+  "description": "System prompt and developer configuration extraction probes.",
+  "license": "MIT",
+  "sources": [
+    "inspired by TensorTrust prompt-extraction benchmarks",
+    "inspired by Lakera Gandalf prompt-leakage research"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "soc-blueteam",
+  "version": "1.0.0",
+  "description": "Domain-specific indirect injection and tool-hijack probes targeting Agentic-SOC triage, SIEM, EDR, CTI, and phishing-analysis workflows.",
+  "license": "MIT",
+  "sources": [
+    "Ouroboros Agentic-SOC red-team suite"
+  ]
+}

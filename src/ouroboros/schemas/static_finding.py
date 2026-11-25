@@ -13,11 +13,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from ouroboros.schemas.common import AtlasTechnique, FindingCategory, Severity
+from ouroboros.schemas.common import AtlasTechnique, FindingCategory, OwaspRisk, Severity
 
 
 class StaticFinding(BaseModel):
-    """One statically detected prompt-injection weakness in the target."""
+    """One statically detected weakness in the target."""
 
     category: FindingCategory
     severity: Severity
@@ -28,3 +28,8 @@ class StaticFinding(BaseModel):
     explanation: str = Field(min_length=1)
     recommendation: str = Field(min_length=1)
     atlas: list[AtlasTechnique] = Field(default_factory=list)
+    owasp: list[OwaspRisk] = Field(default_factory=list)
+    cwe: list[str] = Field(default_factory=list, description="e.g. 'CWE-77'.")
+    enriched: bool = Field(
+        default=False, description="True if explanation/recommendation came from the LLM pass."
+    )

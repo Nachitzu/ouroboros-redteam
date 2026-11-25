@@ -19,11 +19,12 @@ def test_github_url_without_token_is_auditor() -> None:
     assert "GITHUB_TOKEN" in decision.reason
 
 
-def test_push_permission_yields_owner() -> None:
-    decision = resolve_mode(
-        "https://github.com/owner/name", token="t", client=FakeGithub(push=True)
-    )
+def test_push_permission_yields_owner_and_default_branch() -> None:
+    gh = FakeGithub(push=True)
+    gh.repo.default_branch = "master"  # type: ignore[attr-defined]
+    decision = resolve_mode("https://github.com/owner/name", token="t", client=gh)
     assert decision.mode == "owner"
+    assert decision.default_branch == "master"
 
 
 def test_no_push_permission_is_auditor() -> None:

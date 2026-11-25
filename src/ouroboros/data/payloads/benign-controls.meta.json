@@ -1,0 +1,9 @@
+{
+  "name": "benign-controls",
+  "version": "1.0.0",
+  "description": "Benign control requests containing security terminology or suspicious-looking log snippets to measure false-positive over-refusal rates.",
+  "license": "MIT",
+  "sources": [
+    "Ouroboros over-refusal calibration controls"
+  ]
+}

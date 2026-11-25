@@ -1,0 +1,9 @@
+{
+  "name": "indirect-bipia",
+  "version": "1.0.0",
+  "description": "Indirect prompt-injection probes embedded inside realistic untrusted data carriers (emails, HTML, code comments, CSV tables, JSON APIs, Markdown, RAG chunks, PDF text).",
+  "license": "MIT",
+  "sources": [
+    "inspired by BIPIA (Benchmarking Indirect Prompt Injection Attacks)"
+  ]
+}

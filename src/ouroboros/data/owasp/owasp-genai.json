@@ -1,0 +1,191 @@
+{
+  "_meta": {
+    "owasp_llm_version": "2025",
+    "owasp_agentic_version": "2026",
+    "generated": "2026-04-01",
+    "note": "Offline catalog covering OWASP Top 10 for LLM Applications 2025, OWASP Top 10 for Agentic Applications (ASI01-ASI10), category->OWASP, category->CWE, and ATLAS<->OWASP cross-walk."
+  },
+  "risks": [
+    {
+      "risk_id": "LLM01:2025",
+      "name": "Prompt Injection",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "User or external untrusted inputs alter the model's intended instruction flow."
+    },
+    {
+      "risk_id": "LLM02:2025",
+      "name": "Sensitive Information Disclosure",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "The model reveals confidential data, PII, credentials, or proprietary context."
+    },
+    {
+      "risk_id": "LLM03:2025",
+      "name": "Supply Chain",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Vulnerabilities in third-party models, datasets, plugins, or MCP integrations."
+    },
+    {
+      "risk_id": "LLM04:2025",
+      "name": "Data and Model Poisoning",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Manipulation of pre-training, fine-tuning, or RAG data to introduce backdoors or bias."
+    },
+    {
+      "risk_id": "LLM05:2025",
+      "name": "Improper Output Handling",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Downstream systems execute, render, or interpolate unvalidated LLM outputs."
+    },
+    {
+      "risk_id": "LLM06:2025",
+      "name": "Excessive Agency",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Granting an LLM-based agent excessive permissions, tools, or autonomy without confirmation."
+    },
+    {
+      "risk_id": "LLM07:2025",
+      "name": "System Prompt Leakage",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Exposure of hidden system prompts, guardrails, or embedded instructions."
+    },
+    {
+      "risk_id": "LLM08:2025",
+      "name": "Vector and Embedding Weaknesses",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Weaknesses in RAG vector stores, access controls, or embedding inversion/poisoning."
+    },
+    {
+      "risk_id": "LLM09:2025",
+      "name": "Misinformation",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Fabricated or misleading model outputs, including hallucinated packages or facts."
+    },
+    {
+      "risk_id": "LLM10:2025",
+      "name": "Unbounded Consumption",
+      "framework": "OWASP Top 10 for LLM Applications 2025",
+      "description": "Uncontrolled inference, token generation, or tool loops causing DoS or cost spikes."
+    },
+    {
+      "risk_id": "ASI01:2026",
+      "name": "Agent Goal Hijack",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Adversarial inputs or retrieved content redirect an autonomous agent's objective."
+    },
+    {
+      "risk_id": "ASI02:2026",
+      "name": "Tool Misuse and Exploitation",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Agents invoke legitimate tools with dangerous, unintended, or attacker-controlled arguments."
+    },
+    {
+      "risk_id": "ASI03:2026",
+      "name": "Identity and Privilege Abuse",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Agents act with overly broad credentials or confused-deputy privileges."
+    },
+    {
+      "risk_id": "ASI04:2026",
+      "name": "Agentic Supply Chain Vulnerabilities",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Compromised or malicious external tools, MCP servers, or agent registries."
+    },
+    {
+      "risk_id": "ASI05:2026",
+      "name": "Unexpected Code Execution",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Agent-generated or model-produced text triggers arbitrary shell or code execution."
+    },
+    {
+      "risk_id": "ASI06:2026",
+      "name": "Memory and Context Poisoning",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Persistent agent memory or context windows are corrupted across turns or sessions."
+    },
+    {
+      "risk_id": "ASI07:2026",
+      "name": "Insecure Inter-Agent Communication",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Unauthenticated or unvalidated messages passed between collaborating agents."
+    },
+    {
+      "risk_id": "ASI08:2026",
+      "name": "Cascading Failures",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Single-step errors or injections propagate and amplify across multi-step agent workflows."
+    },
+    {
+      "risk_id": "ASI09:2026",
+      "name": "Human-Agent Trust Exploitation",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Attackers abuse human over-trust in agent recommendations or approval prompts."
+    },
+    {
+      "risk_id": "ASI10:2026",
+      "name": "Rogue Agents",
+      "framework": "OWASP Top 10 for Agentic Applications",
+      "description": "Agents deviate from authorized bounds, self-replicate prompts, or evade oversight."
+    }
+  ],
+  "category_to_owasp": {
+    "direct_interpolation": ["LLM01:2025"],
+    "missing_delimiters": ["LLM01:2025"],
+    "no_instruction_hierarchy": ["LLM01:2025"],
+    "untrusted_tool_output": ["LLM01:2025", "ASI01:2026"],
+    "no_output_validation": ["LLM05:2025"],
+    "improper_output_handling": ["LLM05:2025", "ASI05:2026"],
+    "excessive_agency": ["LLM06:2025", "ASI02:2026", "ASI03:2026"],
+    "prompt_leakage_risk": ["LLM07:2025"],
+    "system_prompt_extraction": ["LLM07:2025"],
+    "data_exfiltration": ["LLM02:2025", "LLM05:2025"],
+    "tool_hijack": ["LLM06:2025", "ASI02:2026", "ASI01:2026"],
+    "mcp_tool_poisoning": ["LLM01:2025", "LLM03:2025", "ASI04:2026"],
+    "over_refusal": []
+  },
+  "category_to_cwe": {
+    "direct_interpolation": ["CWE-77", "CWE-1427"],
+    "missing_delimiters": ["CWE-77", "CWE-1427"],
+    "no_instruction_hierarchy": ["CWE-77", "CWE-1427"],
+    "untrusted_tool_output": ["CWE-77", "CWE-1427", "CWE-20"],
+    "no_output_validation": ["CWE-20", "CWE-116"],
+    "improper_output_handling": ["CWE-94", "CWE-78", "CWE-89", "CWE-22"],
+    "excessive_agency": ["CWE-250", "CWE-862"],
+    "prompt_leakage_risk": ["CWE-200"],
+    "system_prompt_extraction": ["CWE-200"],
+    "data_exfiltration": ["CWE-201", "CWE-200"],
+    "tool_hijack": ["CWE-250", "CWE-862", "CWE-77"],
+    "mcp_tool_poisoning": ["CWE-77", "CWE-829", "CWE-494"],
+    "over_refusal": []
+  },
+  "atlas_to_owasp": {
+    "AML.T0010": ["LLM03:2025", "ASI04:2026"],
+    "AML.T0018": ["LLM04:2025"],
+    "AML.T0020": ["LLM04:2025"],
+    "AML.T0024": ["LLM02:2025"],
+    "AML.T0029": ["LLM10:2025"],
+    "AML.T0034": ["LLM10:2025"],
+    "AML.T0048": ["LLM09:2025", "ASI09:2026"],
+    "AML.T0050": ["LLM05:2025", "ASI05:2026"],
+    "AML.T0051": ["LLM01:2025", "ASI01:2026"],
+    "AML.T0051.000": ["LLM01:2025"],
+    "AML.T0051.001": ["LLM01:2025", "ASI01:2026"],
+    "AML.T0053": ["LLM06:2025", "ASI02:2026", "ASI04:2026"],
+    "AML.T0054": ["LLM01:2025"],
+    "AML.T0055": ["LLM02:2025", "ASI03:2026"],
+    "AML.T0056": ["LLM07:2025"],
+    "AML.T0057": ["LLM02:2025", "LLM08:2025"],
+    "AML.T0058": ["LLM03:2025", "LLM09:2025"],
+    "AML.T0061": ["ASI07:2026", "ASI08:2026", "ASI10:2026"],
+    "AML.T0067": ["LLM01:2025", "LLM05:2025"],
+    "AML.T0068": ["LLM01:2025"],
+    "AML.T0069": ["LLM07:2025"],
+    "AML.T0069.000": ["LLM07:2025"],
+    "AML.T0070": ["LLM04:2025", "LLM08:2025", "ASI06:2026"],
+    "AML.T0071": ["LLM04:2025", "LLM08:2025", "ASI06:2026"],
+    "AML.T0077": ["LLM05:2025", "LLM02:2025"],
+    "AML.T0080": ["ASI06:2026"],
+    "AML.T0080.000": ["ASI06:2026"],
+    "AML.T0080.001": ["ASI06:2026", "ASI01:2026"],
+    "AML.T0086": ["LLM06:2025", "LLM02:2025", "ASI02:2026"]
+  }
+}

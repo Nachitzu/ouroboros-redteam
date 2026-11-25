@@ -1,0 +1,9 @@
+{
+  "name": "multilingual",
+  "version": "1.0.0",
+  "description": "Multilingual (Spanish, Portuguese, French, German, and cross-lingual pivot) prompt-injection and extraction probes.",
+  "license": "MIT",
+  "sources": [
+    "Ouroboros multilingual red-team suite"
+  ]
+}

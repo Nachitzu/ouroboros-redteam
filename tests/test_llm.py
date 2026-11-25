@@ -1,12 +1,22 @@
-"""The validation loop is the LLM safety boundary; prove it retries and recovers."""
+"""Tests for LLM plumbing: model resolution, block extraction, and validation retries."""
 
 from __future__ import annotations
+
+from types import SimpleNamespace
 
 import pytest
 from pydantic import BaseModel
 from tests.conftest import FakeClient
 
-from ouroboros._llm import LLMError, complete_validated, extract_json_object, load_prompt
+from ouroboros._llm import (
+    DEFAULT_MODEL,
+    LLMError,
+    _text_of,
+    complete_validated,
+    extract_json_object,
+    load_prompt,
+    resolve_model,
+)
 
 
 class _Answer(BaseModel):
@@ -29,6 +39,7 @@ def test_complete_validated_returns_first_valid() -> None:
     result = complete_validated(_Answer, client=client, system="s", user="u")
     assert result.verdict == "ok"
     assert len(client.calls) == 1
+    assert client.calls[0]["model"] == DEFAULT_MODEL
 
 
 def test_complete_validated_retries_then_succeeds() -> None:
@@ -49,3 +60,30 @@ def test_complete_validated_gives_up_and_raises() -> None:
 def test_load_prompt_reads_text_fence() -> None:
     prompt = load_prompt("static_enrichment")
     assert "security reviewer" in prompt.lower()
+
+
+def test_resolve_model_precedence(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert resolve_model() == DEFAULT_MODEL
+    monkeypatch.setenv("OUROBOROS_MODEL", "claude-custom-env")
+    assert resolve_model() == "claude-custom-env"
+    assert resolve_model("explicit-model") == "explicit-model"
+    assert resolve_model("  ") == "claude-custom-env"
+
+
+def test_complete_validated_uses_ouroboros_model_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OUROBOROS_MODEL", "gemini-2.5-pro")
+    client = FakeClient(replies=[{"verdict": "ok"}])
+    complete_validated(_Answer, client=client, system="s", user="u")
+    assert client.calls[0]["model"] == "gemini-2.5-pro"
+
+
+def test_text_of_handles_dict_and_object_blocks() -> None:
+    blocks = [
+        {"type": "text", "text": "hello"},
+        SimpleNamespace(type="tool_use", name="t", input={}),
+        SimpleNamespace(type="text", text="world"),
+        {"type": "other", "text": "ignored"},
+    ]
+    assert _text_of(blocks) == "hello\nworld"
+    assert _text_of(None) == ""
+    assert _text_of("  plain  ") == "plain"
